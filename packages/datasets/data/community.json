@@ -1,8 +1,17 @@
-{
-  "version": "1.0.0",
-  "packages": [
-    "discord-token-grabber-x",
-    "roblox-free-robux",
-    "crypto-wallet-drainer"
-  ]
-}
+[
+  {
+    "package": "discord-token-grabber-x",
+    "source": "community report",
+    "date_added": "2024-05-10"
+  },
+  {
+    "package": "roblox-free-robux",
+    "source": "community report",
+    "date_added": "2024-05-10"
+  },
+  {
+    "package": "crypto-wallet-drainer",
+    "source": "community report",
+    "date_added": "2024-06-01"
+  }
+]

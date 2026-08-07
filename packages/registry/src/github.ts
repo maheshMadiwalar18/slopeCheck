@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { DataCache } from './cache';
-import type { HttpResult } from './result';
-import { ok, fail } from './result';
+import type { Result } from '@slopcheck/core';
+import { ok, fail } from '@slopcheck/core';
 import { RegistryError } from './npm';
 
 export const GithubMetadataSchema = z.object({
@@ -19,7 +19,7 @@ export type GithubMetadata = z.infer<typeof GithubMetadataSchema>;
 
 const githubCache = new DataCache<GithubMetadata>();
 
-export async function fetchGithubMetadata(repoUrl: string): Promise<HttpResult<GithubMetadata, RegistryError>> {
+export async function fetchGithubMetadata(repoUrl: string): Promise<Result<GithubMetadata, RegistryError>> {
   const match = repoUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/);
   if (!match || !match[1] || !match[2]) return fail(new RegistryError('Invalid GitHub URL'));
 
@@ -36,8 +36,8 @@ export async function fetchGithubMetadata(repoUrl: string): Promise<HttpResult<G
       'Accept': 'application/vnd.github.v3+json'
     };
 
-    if (process.env.GITHUB_TOKEN) {
-      headers['Authorization'] = `token ${process.env.GITHUB_TOKEN}`;
+    if (process.env['GITHUB_TOKEN']) {
+      headers['Authorization'] = `token ${process.env['GITHUB_TOKEN']}`;
     }
 
     const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { headers });

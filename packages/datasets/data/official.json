@@ -1,9 +1,22 @@
-{
-  "version": "1.0.0",
-  "packages": [
-    "react-codeshift",
-    "express-router-v2",
-    "lodash-utils-core",
-    "axios-fetcher"
-  ]
-}
+[
+  {
+    "package": "react-codeshift",
+    "source": "ChatGPT hallucination",
+    "date_added": "2024-03-15"
+  },
+  {
+    "package": "express-router-v2",
+    "source": "ChatGPT hallucination",
+    "date_added": "2024-03-15"
+  },
+  {
+    "package": "lodash-utils-core",
+    "source": "ChatGPT hallucination",
+    "date_added": "2024-04-01"
+  },
+  {
+    "package": "axios-fetcher",
+    "source": "ChatGPT hallucination",
+    "date_added": "2024-04-01"
+  }
+]

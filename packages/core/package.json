@@ -11,9 +11,6 @@
     "lint": "eslint src/",
     "test": "vitest run"
   },
-  "dependencies": {
-    "@slopcheck/registry": "workspace:*"
-  },
   "devDependencies": {
     "@slopcheck/config": "workspace:*",
     "tsup": "^8.0.2",

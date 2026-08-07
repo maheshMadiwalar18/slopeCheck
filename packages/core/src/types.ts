@@ -1,26 +1,90 @@
-import type { NpmPackageMetadata, NpmDownloadStats, GithubMetadata } from '@slopcheck/registry';
+// ---------------------------------------------------------------------------
+// Domain types — these are the core abstractions of slopcheck.
+// They are defined here with ZERO external dependencies so that @slopcheck/core
+// can be consumed independently by third-party tools.
+//
+// The registry package's Zod-inferred types structurally satisfy these interfaces
+// via TypeScript's structural subtyping — no explicit "implements" needed.
+// ---------------------------------------------------------------------------
 
+/**
+ * Risk severity level for a package.
+ */
 export type RiskLevel = 'SAFE' | 'SUSPICIOUS' | 'HIGH' | 'CRITICAL';
 
+/**
+ * A single risk signal identified by a detector plugin.
+ */
 export interface RiskFactor {
-  name: string;
-  description: string;
-  score: number; // 0-100
-  weight: number; // Weight in final calculation (0-1)
+  readonly name: string;
+  readonly description: string;
+  /** Risk score from 0 (no risk) to 100 (maximum risk). */
+  readonly score: number;
+  /** Weight in the final aggregation. Higher = more influence. */
+  readonly weight: number;
 }
 
+// ---------------------------------------------------------------------------
+// Minimal metadata interfaces (satisfied by registry types via duck typing)
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimal npm package metadata needed for risk analysis.
+ */
+export interface NpmMetadata {
+  readonly name: string;
+  readonly description?: string | undefined;
+  readonly readme?: string | undefined;
+  readonly time: Readonly<Record<string, string>>;
+  readonly maintainers?: readonly { readonly name: string; readonly email?: string | undefined }[] | undefined;
+  readonly repository?: string | { readonly type?: string | undefined; readonly url: string } | undefined;
+  readonly homepage?: string | undefined;
+  readonly versions?: Readonly<Record<string, unknown>> | undefined;
+}
+
+/**
+ * Minimal npm download statistics needed for risk analysis.
+ */
+export interface DownloadStats {
+  readonly downloads: number;
+  readonly start: string;
+  readonly end: string;
+  readonly package: string;
+}
+
+/**
+ * Minimal GitHub repository metadata needed for risk analysis.
+ */
+export interface GithubInfo {
+  readonly full_name: string;
+  readonly stargazers_count: number;
+  readonly forks_count: number;
+  readonly created_at: string;
+  readonly updated_at: string;
+  readonly pushed_at: string;
+  readonly archived?: boolean | undefined;
+  readonly disabled?: boolean | undefined;
+}
+
+/**
+ * All available context for evaluating a package's risk.
+ * Populated incrementally by the CLI engine before passing to detectors.
+ */
 export interface PackageContext {
-  name: string;
-  version?: string;
-  npm?: NpmPackageMetadata | null;
-  downloads?: NpmDownloadStats | null;
-  github?: GithubMetadata | null;
+  readonly name: string;
+  readonly version?: string | undefined;
+  npm?: NpmMetadata | null | undefined;
+  downloads?: DownloadStats | null | undefined;
+  github?: GithubInfo | null | undefined;
 }
 
+/**
+ * The final risk assessment produced by the RiskEngine.
+ */
 export interface RiskAssessment {
-  package: string;
-  score: number; // 0-100, higher is worse
-  level: RiskLevel;
-  factors: RiskFactor[];
-  recommendations: string[];
+  readonly package: string;
+  readonly score: number;
+  readonly level: RiskLevel;
+  readonly factors: readonly RiskFactor[];
+  readonly recommendations: readonly string[];
 }

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { DataCache } from './cache';
-import type { HttpResult } from './result';
-import { ok, fail } from './result';
+import type { Result } from '@slopcheck/core';
+import { ok, fail } from '@slopcheck/core';
 
 export const NpmPackageMetadataSchema = z.object({
   name: z.string(),
@@ -38,7 +38,7 @@ export class RegistryError extends Error {
   }
 }
 
-export async function fetchNpmMetadata(packageName: string): Promise<HttpResult<NpmPackageMetadata, RegistryError>> {
+export async function fetchNpmMetadata(packageName: string): Promise<Result<NpmPackageMetadata, RegistryError>> {
   const cached = metadataCache.get(packageName);
   if (cached) return ok(cached);
 
@@ -59,7 +59,7 @@ export async function fetchNpmMetadata(packageName: string): Promise<HttpResult<
   }
 }
 
-export async function fetchNpmDownloads(packageName: string): Promise<HttpResult<NpmDownloadStats, RegistryError>> {
+export async function fetchNpmDownloads(packageName: string): Promise<Result<NpmDownloadStats, RegistryError>> {
   const cached = downloadsCache.get(packageName);
   if (cached) return ok(cached);
 

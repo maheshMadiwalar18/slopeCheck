@@ -1,4 +1,5 @@
-import { RiskEngine, PackageContext, PluginRegistry } from '@slopcheck/core';
+import type { PackageContext, RiskAssessment } from '@slopcheck/core';
+import { RiskEngine, PluginRegistry } from '@slopcheck/core';
 import { fetchNpmMetadata, fetchNpmDownloads, fetchGithubMetadata } from '@slopcheck/registry';
 import { 
   AgeDetector, 
@@ -11,7 +12,7 @@ import {
 
 let sharedEngine: RiskEngine | null = null;
 
-export function getEngine() {
+export function getEngine(): RiskEngine {
   if (sharedEngine) return sharedEngine;
   
   const registry = new PluginRegistry();
@@ -26,7 +27,7 @@ export function getEngine() {
   return sharedEngine;
 }
 
-export async function evaluatePackage(packageName: string, version?: string) {
+export async function evaluatePackage(packageName: string, version?: string): Promise<RiskAssessment> {
   const context: PackageContext = { name: packageName, version };
 
   const npmRes = await fetchNpmMetadata(packageName);
