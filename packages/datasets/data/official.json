@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "packages": [
+    "react-codeshift",
+    "express-router-v2",
+    "lodash-utils-core",
+    "axios-fetcher"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "@slopcheck/heuristics",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@slopcheck/core": "workspace:*",
+    "@slopcheck/datasets": "workspace:*",
+    "fastest-levenshtein": "^1.0.16"
+  },
+  "devDependencies": {
+    "@slopcheck/config": "workspace:*",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5"
+  }
+}
