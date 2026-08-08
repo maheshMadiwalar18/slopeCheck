@@ -35,6 +35,9 @@ importers:
       '@slopcheck/core':
         specifier: workspace:*
         version: link:../core
+      '@slopcheck/datasets':
+        specifier: workspace:*
+        version: link:../datasets
       '@slopcheck/heuristics':
         specifier: workspace:*
         version: link:../heuristics

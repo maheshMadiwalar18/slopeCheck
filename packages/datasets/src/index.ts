@@ -26,6 +26,7 @@ const __basedir = dirname(__filename);
 let officialCache: readonly HallucinationRecord[] | null = null;
 let communityCache: readonly HallucinationRecord[] | null = null;
 let mergedSet: ReadonlySet<string> | null = null;
+let popularCache: readonly string[] | null = null;
 
 function validateRecords(data: unknown, filePath: string): readonly HallucinationRecord[] {
   if (!Array.isArray(data)) {
@@ -102,4 +103,23 @@ export async function getKnownHallucinationNames(): Promise<ReadonlySet<string>>
 
   mergedSet = names;
   return mergedSet;
+}
+
+/**
+ * Load the curated list of popular npm package names used for typosquatting detection.
+ * Results are cached after the first call.
+ */
+export async function getPopularPackages(): Promise<readonly string[]> {
+  if (popularCache !== null) return popularCache;
+
+  const fullPath = resolve(__basedir, '../data/popular-packages.json');
+  const content = await readFile(fullPath, 'utf-8');
+  const data: unknown = JSON.parse(content);
+
+  if (!Array.isArray(data) || !data.every((item): item is string => typeof item === 'string')) {
+    throw new Error('popular-packages.json must be a JSON array of strings');
+  }
+
+  popularCache = data as readonly string[];
+  return popularCache;
 }

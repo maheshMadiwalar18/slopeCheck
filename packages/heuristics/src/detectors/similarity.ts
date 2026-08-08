@@ -1,21 +1,18 @@
 import type { DetectorPlugin, PackageContext, RiskFactor, Result } from '@slopcheck/core';
 import { ok, fail } from '@slopcheck/core';
 import { distance } from 'fastest-levenshtein';
-
-// Simple mocked list of highly popular packages for typosquatting checks
-// In a real app, this would be fetched from @slopcheck/datasets
-const POPULAR_PACKAGES = [
-  'react', 'lodash', 'express', 'moment', 'chalk', 'tslib', 'commander', 'axios', 'request'
-];
+import { getPopularPackages } from '@slopcheck/datasets';
 
 export class SimilarityDetector implements DetectorPlugin {
   name = 'SimilarityDetector';
 
   async analyze(context: PackageContext): Promise<Result<RiskFactor[], Error>> {
     try {
-      if (POPULAR_PACKAGES.includes(context.name)) return ok([]);
+      const popularPackages = await getPopularPackages();
 
-      for (const popular of POPULAR_PACKAGES) {
+      if (popularPackages.includes(context.name)) return ok([]);
+
+      for (const popular of popularPackages) {
         const dist = distance(context.name, popular);
 
         // If it's a 1-character typo of a massively popular package
