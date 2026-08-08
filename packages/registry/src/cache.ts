@@ -16,4 +16,12 @@ export class DataCache<T> {
   set(key: string, data: T): void {
     this.cache.set(key, { data, expiresAt: Date.now() + this.ttlMs });
   }
+
+  clear(): void {
+    this.cache.clear();
+  }
+
+  get size(): number {
+    return this.cache.size;
+  }
 }

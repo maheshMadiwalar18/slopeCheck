@@ -19,6 +19,8 @@ export type GithubMetadata = z.infer<typeof GithubMetadataSchema>;
 
 const githubCache = new DataCache<GithubMetadata>();
 
+const DEFAULT_TIMEOUT_MS = 10_000;
+
 export async function fetchGithubMetadata(repoUrl: string): Promise<Result<GithubMetadata, RegistryError>> {
   const match = repoUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/);
   if (!match || !match[1] || !match[2]) return fail(new RegistryError('Invalid GitHub URL'));
@@ -36,11 +38,15 @@ export async function fetchGithubMetadata(repoUrl: string): Promise<Result<Githu
       'Accept': 'application/vnd.github.v3+json'
     };
 
-    if (process.env['GITHUB_TOKEN']) {
-      headers['Authorization'] = `token ${process.env['GITHUB_TOKEN']}`;
+    const token = process.env['GITHUB_TOKEN'];
+    if (token) {
+      headers['Authorization'] = `token ${token}`;
     }
 
-    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, { headers });
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+      headers,
+      signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
+    });
     if (!response.ok) {
       if (response.status === 404) return fail(new RegistryError('Repository not found', 404));
       if (response.status === 403 || response.status === 429) return fail(new RegistryError('Rate limited by GitHub', response.status));
@@ -52,6 +58,7 @@ export async function fetchGithubMetadata(repoUrl: string): Promise<Result<Githu
     return ok(parsed);
   } catch (e) {
     if (e instanceof z.ZodError) return fail(new RegistryError(`Schema validation failed: ${e.message}`));
+    if (e instanceof DOMException && e.name === 'TimeoutError') return fail(new RegistryError('Request timed out'));
     return fail(new RegistryError(e instanceof Error ? e.message : 'Unknown network error'));
   }
 }
