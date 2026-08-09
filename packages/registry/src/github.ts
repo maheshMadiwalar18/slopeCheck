@@ -20,6 +20,49 @@ export type GithubMetadata = z.infer<typeof GithubMetadataSchema>;
 const githubCache = new DataCache<GithubMetadata>();
 
 const DEFAULT_TIMEOUT_MS = 10_000;
+const MAX_RETRIES = 2;
+const RETRY_BASE_MS = 500;
+
+const inflight = new Map<string, Promise<Response>>();
+
+async function fetchWithRetry(url: string, init?: RequestInit): Promise<Response> {
+  const existing = inflight.get(url);
+  if (existing) return existing;
+
+  const attempt = async (retries: number): Promise<Response> => {
+    try {
+      const response = await fetch(url, {
+        ...init,
+        signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
+      });
+
+      if (response.status >= 500 && retries < MAX_RETRIES) {
+        await sleep(RETRY_BASE_MS * 2 ** retries);
+        return attempt(retries + 1);
+      }
+
+      return response;
+    } catch (e) {
+      if (retries < MAX_RETRIES && e instanceof TypeError) {
+        await sleep(RETRY_BASE_MS * 2 ** retries);
+        return attempt(retries + 1);
+      }
+      throw e;
+    }
+  };
+
+  const promise = attempt(0).finally(() => {
+    inflight.delete(url);
+  });
+
+  inflight.set(url, promise);
+  return promise;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 
 export async function fetchGithubMetadata(repoUrl: string): Promise<Result<GithubMetadata, RegistryError>> {
   const match = repoUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/);
@@ -43,9 +86,8 @@ export async function fetchGithubMetadata(repoUrl: string): Promise<Result<Githu
       headers['Authorization'] = `token ${token}`;
     }
 
-    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+    const response = await fetchWithRetry(`https://api.github.com/repos/${owner}/${repo}`, {
       headers,
-      signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS),
     });
     if (!response.ok) {
       if (response.status === 404) return fail(new RegistryError('Repository not found', 404));

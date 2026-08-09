@@ -10,21 +10,33 @@ const cli = cac('slopcheck-agent');
 
 cli
   .command('check <package>', 'Check a single npm package for risks')
-  .action(async (pkg) => {
+  .option('--json', 'Output results in JSON format')
+  .action(async (pkg, options) => {
     try {
-      await checkCommand(pkg);
+      await checkCommand(pkg, options);
     } catch (e) {
-      console.error(pc.red('Error checking package'), e);
+      if (options.json) {
+        console.log(JSON.stringify({ error: 'Error checking package' }, null, 2));
+      } else {
+        console.error(pc.red('Error checking package'), e);
+      }
+      process.exitCode = 2;
     }
   });
 
 cli
   .command('scan <package.json>', 'Scan all dependencies in a package.json')
-  .action(async (file) => {
+  .option('--json', 'Output results in JSON format')
+  .action(async (file, options) => {
     try {
-      await scanCommand(file);
+      await scanCommand(file, options);
     } catch (e) {
-      console.error(pc.red('Error scanning package.json'), e);
+      if (options.json) {
+        console.log(JSON.stringify({ error: 'Error scanning package.json' }, null, 2));
+      } else {
+        console.error(pc.red('Error scanning package.json'), e);
+      }
+      process.exitCode = 2;
     }
   });
 

@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { evaluatePackage } from '../engine';
-import { getRiskColor } from './check';
+import { getRiskColor, CheckOptions } from './check';
 import pc from 'picocolors';
 import pLimit from 'p-limit';
 import cliProgress from 'cli-progress';
@@ -12,16 +12,22 @@ const PackageJsonSchema = z.object({
   devDependencies: z.record(z.string(), z.string()).optional(),
 });
 
-export async function scanCommand(packageJsonPath: string) {
-  console.log(pc.cyan(`\n📦 Scanning workspace dependencies: ${pc.bold(packageJsonPath)}...\n`));
+export async function scanCommand(packageJsonPath: string, options: CheckOptions = {}) {
+  if (!options.json) {
+    console.log(pc.cyan(`\n📦 Scanning workspace dependencies: ${pc.bold(packageJsonPath)}...\n`));
+  }
 
   let content: string;
   try {
     const fullPath = path.resolve(process.cwd(), packageJsonPath);
-    // Path traversal check is minimal but cwd() scopes it
     content = await fs.readFile(fullPath, 'utf-8');
   } catch (e) {
-    console.error(pc.red(`❌ Could not read ${packageJsonPath}.`));
+    if (options.json) {
+      console.log(JSON.stringify({ error: `Could not read ${packageJsonPath}.` }, null, 2));
+    } else {
+      console.error(pc.red(`❌ Could not read ${packageJsonPath}.`));
+    }
+    process.exitCode = 2;
     return;
   }
 
@@ -30,7 +36,13 @@ export async function scanCommand(packageJsonPath: string) {
     const data = JSON.parse(content);
     pkg = PackageJsonSchema.parse(data);
   } catch (e) {
-    console.error(pc.red(`❌ Invalid package.json format: ${e instanceof Error ? e.message : 'Unknown error'}`));
+    const msg = `Invalid package.json format: ${e instanceof Error ? e.message : 'Unknown error'}`;
+    if (options.json) {
+      console.log(JSON.stringify({ error: msg }, null, 2));
+    } else {
+      console.error(pc.red(`❌ ${msg}`));
+    }
+    process.exitCode = 2;
     return;
   }
 
@@ -40,48 +52,75 @@ export async function scanCommand(packageJsonPath: string) {
   ];
 
   if (packages.length === 0) {
-    console.log(pc.green('No dependencies found.'));
+    if (options.json) {
+      console.log(JSON.stringify([], null, 2));
+    } else {
+      console.log(pc.green('No dependencies found.'));
+    }
+    process.exitCode = 0;
     return;
   }
 
   const limit = pLimit(10);
-  const bar = new cliProgress.SingleBar({
-    format: 'Progress |' + pc.cyan('{bar}') + '| {percentage}% || {value}/{total} Packages || Current: {package}',
-    barCompleteChar: '\u2588',
-    barIncompleteChar: '\u2591',
-    hideCursor: true
-  });
+  let bar: cliProgress.SingleBar | undefined;
 
-  bar.start(packages.length, 0, { package: 'Starting...' });
+  if (!options.json) {
+    bar = new cliProgress.SingleBar({
+      format: 'Progress |' + pc.cyan('{bar}') + '| {percentage}% || {value}/{total} Packages || Current: {package}',
+      barCompleteChar: '\u2588',
+      barIncompleteChar: '\u2591',
+      hideCursor: true
+    });
+    bar.start(packages.length, 0, { package: 'Starting...' });
+  }
 
   const results = await Promise.all(packages.map(p => 
     limit(async () => {
-      bar.update({ package: p });
+      if (bar) bar.update({ package: p });
       const res = await evaluatePackage(p);
-      bar.increment();
+      if (bar) bar.increment();
       return res;
     })
   ));
 
-  bar.stop();
-  console.log('\n');
+  if (bar) bar.stop();
 
-  const riskyPackages = results.filter(r => r.score >= 30).sort((a, b) => b.score - a.score);
-  
-  if (riskyPackages.length === 0) {
-    console.log(pc.green(`✅ All ${packages.length} dependencies appear safe.`));
-    return;
-  }
+  if (options.json) {
+    console.log(JSON.stringify(results, null, 2));
+  } else {
+    console.log('\n');
+    const riskyPackages = results.filter(r => (r.score !== null ? r.score : 0) >= 30 || r.status !== 'COMPLETE').sort((a, b) => (b.score || 0) - (a.score || 0));
+    
+    if (riskyPackages.length === 0) {
+      console.log(pc.green(`✅ All ${packages.length} dependencies appear safe.`));
+    } else {
+      console.log(pc.yellow(`⚠️ Found ${riskyPackages.length} potentially risky dependencies:\n`));
 
-  console.log(pc.yellow(`⚠️ Found ${riskyPackages.length} potentially risky dependencies:\n`));
-
-  for (const r of riskyPackages) {
-    console.log(`${pc.bold(r.package)} - Risk Level: ${getRiskColor(r.level)(r.level)} (Score: ${r.score})`);
-    for (const factor of r.factors) {
-      if (factor.score >= 50) {
-        console.log(`  - ${pc.red(factor.name)}: ${factor.description}`);
+      for (const r of riskyPackages) {
+        console.log(`${pc.bold(r.package)} - Risk Level: ${getRiskColor(r.level)(r.level)} (Score: ${r.score !== null ? r.score : 'N/A'})`);
+        if (r.status !== 'COMPLETE') {
+          console.log(pc.yellow(`  - Assessment Status: ${r.status}`));
+          for (const err of r.errors) {
+            console.log(pc.red(`  - [${err.source}] ${err.code}: ${err.message}`));
+          }
+        }
+        for (const factor of r.factors) {
+          if (factor.score >= 50) {
+            console.log(`  - ${pc.red(factor.name)}: ${factor.description}`);
+          }
+        }
+        console.log();
       }
     }
-    console.log();
   }
+
+  let exitCode = 0;
+  for (const r of results) {
+    if (r.status === 'NOT_FOUND' || r.status === 'UNAVAILABLE' || !r.assessable) {
+      exitCode = Math.max(exitCode, 2);
+    } else if (r.level === 'HIGH' || r.level === 'CRITICAL') {
+      exitCode = Math.max(exitCode, 1);
+    }
+  }
+  process.exitCode = exitCode;
 }

@@ -1,4 +1,4 @@
-import type { PackageContext, RiskAssessment } from '@slopcheck/core';
+import type { PackageContext, RiskAssessment, AssessmentStatus, AssessmentError } from '@slopcheck/core';
 import { RiskEngine, PluginRegistry } from '@slopcheck/core';
 import { fetchNpmMetadata, fetchNpmDownloads, fetchGithubMetadata } from '@slopcheck/registry';
 import { 
@@ -29,20 +29,68 @@ export function getEngine(): RiskEngine {
 
 export async function evaluatePackage(packageName: string, version?: string): Promise<RiskAssessment> {
   const context: PackageContext = { name: packageName, version };
+  let status: AssessmentStatus = 'COMPLETE';
+  const errors: AssessmentError[] = [];
 
   const npmRes = await fetchNpmMetadata(packageName);
-  if (npmRes.ok) {
+  if (!npmRes.ok) {
+    const error: AssessmentError = {
+      source: 'npm',
+      code: npmRes.error.status === 404 ? 'PACKAGE_NOT_FOUND' : 'REGISTRY_ERROR',
+      message: npmRes.error.message
+    };
+    
+    if (npmRes.error.status === 404) {
+      return {
+        package: packageName,
+        status: 'NOT_FOUND',
+        assessable: false,
+        score: null,
+        level: 'UNKNOWN',
+        factors: [],
+        recommendations: [],
+        errors: [error],
+      };
+    } else {
+      status = 'UNAVAILABLE';
+      errors.push(error);
+    }
+  } else {
     context.npm = npmRes.value;
     const dlRes = await fetchNpmDownloads(packageName);
-    if (dlRes.ok) context.downloads = dlRes.value;
+    if (!dlRes.ok) {
+      status = 'PARTIAL';
+      errors.push({
+        source: 'npm_downloads',
+        code: 'DOWNLOADS_UNAVAILABLE',
+        message: dlRes.error.message,
+      });
+    } else {
+      context.downloads = dlRes.value;
+    }
     
     if (context.npm.repository) {
       const repoUrl = typeof context.npm.repository === 'string' ? context.npm.repository : context.npm.repository.url;
       const ghRes = await fetchGithubMetadata(repoUrl);
-      if (ghRes.ok) context.github = ghRes.value;
+      if (!ghRes.ok) {
+        status = 'PARTIAL';
+        errors.push({
+          source: 'github',
+          code: ghRes.error.status === 404 ? 'REPO_NOT_FOUND' : 'GITHUB_ERROR',
+          message: ghRes.error.message,
+        });
+      } else {
+        context.github = ghRes.value;
+      }
     }
   }
 
   const engine = getEngine();
-  return engine.evaluate(context);
+  // Ensure that if we have unavailable npm metadata, assessable is technically false
+  if (status === 'UNAVAILABLE') {
+    const assessment = await engine.evaluate(context, status, errors);
+    return { ...assessment, assessable: false, score: null, level: 'UNKNOWN' };
+  }
+  
+  return engine.evaluate(context, status, errors);
 }

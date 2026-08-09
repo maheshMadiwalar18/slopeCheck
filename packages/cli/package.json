@@ -1,7 +1,6 @@
 {
-  "name": "@slopcheck/cli",
+  "name": "slopcheck-agent",
   "version": "0.1.0",
-  "private": true,
   "bin": {
     "slopcheck-agent": "./dist/index.js"
   },
@@ -27,5 +26,8 @@
     "@types/cli-progress": "^3.11.6",
     "tsup": "^8.0.2",
     "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

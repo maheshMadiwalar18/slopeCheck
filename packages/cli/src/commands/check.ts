@@ -1,29 +1,51 @@
 import { evaluatePackage } from '../engine';
 import pc from 'picocolors';
 
-export async function checkCommand(packageName: string) {
-  console.log(pc.cyan(`\n🔍 Scanning package: ${pc.bold(packageName)}...`));
-  
+export interface CheckOptions {
+  json?: boolean;
+}
+
+export async function checkCommand(packageName: string, options: CheckOptions = {}) {
   const result = await evaluatePackage(packageName);
 
-  console.log(`\nRisk Level: ${getRiskColor(result.level)(result.level)} (Score: ${result.score})`);
-  
-  if (result.factors.length > 0) {
-    console.log(`\nFactors identified:`);
-    for (const factor of result.factors) {
-      console.log(`  - ${factor.name}: ${factor.description} [${factor.score} pts]`);
-    }
+  if (options.json) {
+    console.log(JSON.stringify(result, null, 2));
   } else {
-    console.log(pc.green(`  - No significant risk factors identified.`));
+    console.log(pc.cyan(`\n🔍 Scanning package: ${pc.bold(packageName)}...`));
+    console.log(`\nRisk Level: ${getRiskColor(result.level)(result.level)} (Score: ${result.score !== null ? result.score : 'N/A'})`);
+    
+    if (result.status !== 'COMPLETE') {
+       console.log(pc.yellow(`\nAssessment Status: ${result.status}`));
+       for (const err of result.errors) {
+         console.log(pc.red(`  - [${err.source}] ${err.code}: ${err.message}`));
+       }
+    }
+
+    if (result.factors.length > 0) {
+      console.log(`\nFactors identified:`);
+      for (const factor of result.factors) {
+        console.log(`  - ${factor.name}: ${factor.description} [${factor.score} pts]`);
+      }
+    } else if (result.assessable) {
+      console.log(pc.green(`  - No significant risk factors identified.`));
+    }
+
+    if (result.recommendations.length > 0) {
+      console.log(`\nRecommendations:`);
+      for (const rec of result.recommendations) {
+        console.log(pc.yellow(`  👉 ${rec}`));
+      }
+    }
+    console.log();
   }
 
-  if (result.recommendations.length > 0) {
-    console.log(`\nRecommendations:`);
-    for (const rec of result.recommendations) {
-      console.log(pc.yellow(`  👉 ${rec}`));
-    }
+  if (result.status === 'NOT_FOUND' || result.status === 'UNAVAILABLE' || !result.assessable) {
+    process.exitCode = 2;
+  } else if (result.level === 'HIGH' || result.level === 'CRITICAL') {
+    process.exitCode = 1;
+  } else {
+    process.exitCode = 0;
   }
-  console.log();
 }
 
 export function getRiskColor(level: string) {

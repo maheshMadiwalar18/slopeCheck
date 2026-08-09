@@ -1,10 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { z } from 'zod';
 
-/**
- * A record representing a known AI-hallucinated or malicious package name.
- */
 export interface HallucinationRecord {
   readonly package: string;
   readonly source: string;
@@ -12,103 +10,70 @@ export interface HallucinationRecord {
   readonly notes?: string | undefined;
 }
 
-// ---------------------------------------------------------------------------
-// Internal: ESM-safe directory resolution
-// ---------------------------------------------------------------------------
+const HallucinationRecordSchema = z.object({
+  package: z.string(),
+  source: z.string(),
+  date_added: z.string(),
+  notes: z.string().optional(),
+});
+
+const DatasetSchema = z.array(HallucinationRecordSchema);
 
 const __filename = fileURLToPath(import.meta.url);
 const __basedir = dirname(__filename);
 
-// ---------------------------------------------------------------------------
-// Internal: In-memory cache (read once from disk, serve forever)
-// ---------------------------------------------------------------------------
-
 let officialCache: readonly HallucinationRecord[] | null = null;
 let communityCache: readonly HallucinationRecord[] | null = null;
 let mergedSet: ReadonlySet<string> | null = null;
+let hallucinationMap: ReadonlyMap<string, HallucinationRecord> | null = null;
 let popularCache: readonly string[] | null = null;
-
-function validateRecords(data: unknown, filePath: string): readonly HallucinationRecord[] {
-  if (!Array.isArray(data)) {
-    throw new Error(`Dataset ${filePath} must be a JSON array, got ${typeof data}`);
-  }
-
-  for (let i = 0; i < data.length; i++) {
-    const item: unknown = data[i];
-    if (
-      typeof item !== 'object' ||
-      item === null ||
-      !('package' in item) ||
-      typeof (item as Record<string, unknown>).package !== 'string' ||
-      !('source' in item) ||
-      typeof (item as Record<string, unknown>).source !== 'string' ||
-      !('date_added' in item) ||
-      typeof (item as Record<string, unknown>).date_added !== 'string'
-    ) {
-      throw new Error(
-        `Dataset ${filePath}[${i}] must have { package: string, source: string, date_added: string }`,
-      );
-    }
-  }
-
-  return data as readonly HallucinationRecord[];
-}
 
 async function loadJsonFile(relativePath: string): Promise<readonly HallucinationRecord[]> {
   const fullPath = resolve(__basedir, relativePath);
   const content = await readFile(fullPath, 'utf-8');
   const data: unknown = JSON.parse(content);
-  return validateRecords(data, relativePath);
+  return DatasetSchema.parse(data);
 }
 
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
-/**
- * Load the official hallucination dataset (curated by maintainers).
- * Results are cached after the first call.
- */
 export async function getOfficialHallucinations(): Promise<readonly HallucinationRecord[]> {
   if (officialCache !== null) return officialCache;
   officialCache = await loadJsonFile('../data/official.json');
   return officialCache;
 }
 
-/**
- * Load the community-contributed hallucination dataset.
- * Results are cached after the first call.
- */
 export async function getCommunityHallucinations(): Promise<readonly HallucinationRecord[]> {
   if (communityCache !== null) return communityCache;
   communityCache = await loadJsonFile('../data/community.json');
   return communityCache;
 }
 
-/**
- * Get a merged Set of all known hallucinated package names for O(1) lookups.
- * Results are cached after the first call.
- */
 export async function getKnownHallucinationNames(): Promise<ReadonlySet<string>> {
   if (mergedSet !== null) return mergedSet;
+  const map = await getHallucinationMap();
+  mergedSet = new Set(map.keys());
+  return mergedSet;
+}
+
+export async function getHallucinationMap(): Promise<ReadonlyMap<string, HallucinationRecord>> {
+  if (hallucinationMap !== null) return hallucinationMap;
 
   const [official, community] = await Promise.all([
     getOfficialHallucinations(),
     getCommunityHallucinations(),
   ]);
 
-  const names = new Set<string>();
-  for (const record of official) names.add(record.package);
-  for (const record of community) names.add(record.package);
+  const map = new Map<string, HallucinationRecord>();
+  for (const record of official) map.set(record.package, record);
+  for (const record of community) {
+    if (!map.has(record.package)) {
+      map.set(record.package, record);
+    }
+  }
 
-  mergedSet = names;
-  return mergedSet;
+  hallucinationMap = map;
+  return hallucinationMap;
 }
 
-/**
- * Load the curated list of popular npm package names used for typosquatting detection.
- * Results are cached after the first call.
- */
 export async function getPopularPackages(): Promise<readonly string[]> {
   if (popularCache !== null) return popularCache;
 
@@ -116,10 +81,7 @@ export async function getPopularPackages(): Promise<readonly string[]> {
   const content = await readFile(fullPath, 'utf-8');
   const data: unknown = JSON.parse(content);
 
-  if (!Array.isArray(data) || !data.every((item): item is string => typeof item === 'string')) {
-    throw new Error('popular-packages.json must be a JSON array of strings');
-  }
-
-  popularCache = data as readonly string[];
+  const parsed = z.array(z.string()).parse(data);
+  popularCache = parsed;
   return popularCache;
 }

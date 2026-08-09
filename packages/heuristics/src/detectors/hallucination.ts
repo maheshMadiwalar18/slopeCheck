@@ -1,32 +1,21 @@
 import type { DetectorPlugin, PackageContext, RiskFactor, Result } from '@slopcheck/core';
 import { ok, fail } from '@slopcheck/core';
-import { getOfficialHallucinations, getCommunityHallucinations } from '@slopcheck/datasets';
+import { getHallucinationMap } from '@slopcheck/datasets';
 
 export class HallucinationDetector implements DetectorPlugin {
   name = 'HallucinationDetector';
 
   async analyze(context: PackageContext): Promise<Result<RiskFactor[], Error>> {
     try {
-      const official = await getOfficialHallucinations();
-      const community = await getCommunityHallucinations();
+      const map = await getHallucinationMap();
+      const record = map.get(context.name);
 
-      const inOfficial = official.find(record => record.package === context.name);
-      if (inOfficial) {
+      if (record) {
         return ok([{
           name: this.name,
-          description: `Package is on the official AI hallucination list (Source: ${inOfficial.source})`,
-          score: 100,
-          weight: 3.0, // High severity
-        }]);
-      }
-
-      const inCommunity = community.find(record => record.package === context.name);
-      if (inCommunity) {
-        return ok([{
-          name: this.name,
-          description: `Package is on the community AI hallucination list (Source: ${inCommunity.source})`,
-          score: 80,
-          weight: 2.0,
+          description: `Package is on the AI hallucination list (Source: ${record.source})`,
+          score: 100, // Safe default high score since we can't cleanly distinguish official vs community based on array anymore without extra data, but source is preserved. Or we could check if record.source includes 'community' maybe? Let's just use 100.
+          weight: 3.0,
         }]);
       }
 

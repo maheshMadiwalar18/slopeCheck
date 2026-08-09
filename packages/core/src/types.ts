@@ -10,7 +10,7 @@
 /**
  * Risk severity level for a package.
  */
-export type RiskLevel = 'SAFE' | 'SUSPICIOUS' | 'HIGH' | 'CRITICAL';
+export type RiskLevel = 'UNKNOWN' | 'SAFE' | 'SUSPICIOUS' | 'HIGH' | 'CRITICAL';
 
 /**
  * A single risk signal identified by a detector plugin.
@@ -78,13 +78,24 @@ export interface PackageContext {
   github?: GithubInfo | null | undefined;
 }
 
+export type AssessmentStatus = 'COMPLETE' | 'PARTIAL' | 'NOT_FOUND' | 'UNAVAILABLE';
+
+export interface AssessmentError {
+  readonly source: string;
+  readonly code: string;
+  readonly message: string;
+}
+
 /**
  * The final risk assessment produced by the RiskEngine.
  */
 export interface RiskAssessment {
   readonly package: string;
-  readonly score: number;
+  readonly status: AssessmentStatus;
+  readonly assessable: boolean;
+  readonly score: number | null;
   readonly level: RiskLevel;
   readonly factors: readonly RiskFactor[];
   readonly recommendations: readonly string[];
+  readonly errors: readonly AssessmentError[];
 }

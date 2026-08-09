@@ -5,7 +5,11 @@ import { isSuccess } from './result';
 export class RiskEngine {
   constructor(private registry: PluginRegistry) {}
 
-  async evaluate(context: PackageContext): Promise<RiskAssessment> {
+  async evaluate(
+    context: PackageContext,
+    status: import('./types').AssessmentStatus = 'COMPLETE',
+    errors: import('./types').AssessmentError[] = []
+  ): Promise<RiskAssessment> {
     const factors: RiskFactor[] = [];
     let totalWeightedScore = 0;
     let totalWeight = 0;
@@ -43,10 +47,13 @@ export class RiskEngine {
 
     return {
       package: context.name,
+      status,
+      assessable: true,
       score: finalScore,
       level,
       factors,
       recommendations,
+      errors,
     };
   }
 }
