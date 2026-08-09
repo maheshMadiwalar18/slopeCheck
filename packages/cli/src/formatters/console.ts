@@ -1,5 +1,5 @@
 import pc from 'picocolors';
-import { RiskAssessment } from '@slopcheck/core';
+import type { RiskAssessment } from '@slopcheck/core';
 
 export function formatRiskAssessment(assessment: RiskAssessment): string {
   let output = `\n${pc.bold('Package:')} ${pc.cyan(assessment.package)}\n`;

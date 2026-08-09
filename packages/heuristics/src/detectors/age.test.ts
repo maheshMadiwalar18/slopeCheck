@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { AgeDetector } from './age';
-import { PackageContext, isSuccess } from '@slopcheck/core';
-
+import { isSuccess } from '@slopcheck/core';
+import type { PackageContext } from '@slopcheck/core';
 describe('AgeDetector', () => {
   it('should flag a 1-day old package', async () => {
     const detector = new AgeDetector();

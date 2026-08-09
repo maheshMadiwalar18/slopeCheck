@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { PluginRegistry, DetectorPlugin } from './plugin';
+import { PluginRegistry } from './plugin';
+import type { DetectorPlugin } from './plugin';
 import { ok } from './result';
 
 function makePlugin(name: string, priority?: number): DetectorPlugin {

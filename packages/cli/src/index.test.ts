@@ -22,10 +22,13 @@ describe('formatRiskAssessment', () => {
   it('should format a SAFE assessment', () => {
     const assessment: RiskAssessment = {
       package: 'safe-pkg',
+      status: 'COMPLETE',
+      assessable: true,
       score: 0,
       level: 'SAFE',
       factors: [],
       recommendations: [],
+      errors: [],
     };
     const output = formatRiskAssessment(assessment);
     expect(output).toContain('safe-pkg');
@@ -36,12 +39,15 @@ describe('formatRiskAssessment', () => {
   it('should format a CRITICAL assessment with factors and recommendations', () => {
     const assessment: RiskAssessment = {
       package: 'bad-pkg',
+      status: 'COMPLETE',
+      assessable: true,
       score: 95,
       level: 'CRITICAL',
       factors: [
         { name: 'Test', description: 'This is risky', score: 95, weight: 2 },
       ],
       recommendations: ['Stop using this package'],
+      errors: [],
     };
     const output = formatRiskAssessment(assessment);
     expect(output).toContain('bad-pkg');

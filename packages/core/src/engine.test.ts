@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { RiskEngine } from './engine';
-import { PluginRegistry, DetectorPlugin } from './plugin';
-import { PackageContext } from './types';
+import { PluginRegistry } from './plugin';
+import type { DetectorPlugin } from './plugin';
+import type { PackageContext } from './types';
 import { ok } from './result';
 
 describe('RiskEngine', () => {

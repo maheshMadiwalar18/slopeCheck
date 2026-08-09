@@ -1,7 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { evaluatePackage } from '../engine';
-import { getRiskColor, CheckOptions } from './check';
+import { getRiskColor } from './check';
+import type { CheckOptions } from './check';
 import pc from 'picocolors';
 import pLimit from 'p-limit';
 import cliProgress from 'cli-progress';
