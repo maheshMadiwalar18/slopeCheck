@@ -110,6 +110,7 @@ export interface RiskAssessment {
   readonly scoring?: {
     readonly totalWeightedScore: number;
     readonly totalWeight: number;
+    readonly heuristicAverage: number;
     readonly finalScore: number;
     readonly contributions: readonly RiskContribution[];
   };

@@ -46,7 +46,7 @@ export async function explainCommand(packageName: string) {
   console.log(`\n  ${'─'.repeat(60)}`);
   
   if (result.scoring) {
-    const avgScore = totalWeight > 0 ? Math.round(totalWeightedScore / totalWeight) : 0;
+    const avgScore = result.scoring.heuristicAverage;
     console.log(
       `  ${'Heuristic Average'.padEnd(24)} ${' '.repeat(10)} ${' '.repeat(14)} ${pc.gray(String(avgScore).padStart(9))}`
     );

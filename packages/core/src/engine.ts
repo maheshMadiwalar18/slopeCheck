@@ -75,13 +75,15 @@ export class RiskEngine {
         scoring: {
           totalWeightedScore,
           totalWeight,
+          heuristicAverage: 0,
           finalScore: 0,
           contributions,
         },
       };
     }
 
-    let finalScore: number | null = totalWeight > 0 ? Math.min(Math.round(totalWeightedScore / totalWeight), 100) : 0;
+    let heuristicAverage = totalWeight > 0 ? Math.round(totalWeightedScore / totalWeight) : 0;
+    let finalScore: number | null = totalWeight > 0 ? Math.min(heuristicAverage, 100) : 0;
     let level: RiskLevel = 'SAFE';
 
     if (totalWeight === 0 && errors.length > 0) {
@@ -108,6 +110,7 @@ export class RiskEngine {
       scoring: {
         totalWeightedScore,
         totalWeight,
+        heuristicAverage,
         finalScore: finalScore ?? 0,
         contributions,
       }
