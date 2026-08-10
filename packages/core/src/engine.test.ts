@@ -33,16 +33,36 @@ describe('RiskEngine', () => {
     expect(result.factors.length).toBe(2);
   });
 
-  it('should fail-closed and return CRITICAL when totalWeight is 0 and status is UNAVAILABLE', async () => {
+  it('should return UNKNOWN and null score when totalWeight is 0 and status is UNAVAILABLE', async () => {
     const registry = new PluginRegistry();
     const engine = new RiskEngine(registry);
     const ctx: PackageContext = { name: 'test-pkg' };
     
     const result = await engine.evaluate(ctx, 'UNAVAILABLE', [{source: 'npm', code: 'TEST', message: 'test'}]);
     
-    expect(result.score).toBe(100);
-    expect(result.level).toBe('CRITICAL');
-    expect(result.factors.length).toBe(1);
-    expect(result.factors[0]?.name).toBe('MissingDataFallback');
+    expect(result.score).toBeNull();
+    expect(result.level).toBe('UNKNOWN');
+    expect(result.status).toBe('UNAVAILABLE');
+    expect(result.assessable).toBe(false);
+  });
+
+  it('should mutate status to PARTIAL and log error if a plugin fails', async () => {
+    const mockPlugin: DetectorPlugin = {
+      name: 'FailingPlugin',
+      analyze: async () => { throw new Error('Crash!'); }
+    };
+
+    const registry = new PluginRegistry();
+    registry.register(mockPlugin);
+
+    const engine = new RiskEngine(registry);
+    const ctx: PackageContext = { name: 'test-pkg' };
+    
+    const result = await engine.evaluate(ctx, 'COMPLETE', []);
+    
+    expect(result.status).toBe('PARTIAL');
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]?.source).toBe('FailingPlugin');
+    expect(result.errors[0]?.code).toBe('PLUGIN_CRASH');
   });
 });

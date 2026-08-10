@@ -30,6 +30,9 @@ export async function checkCommand(packageName: string, options: CheckOptions = 
     
     if (result.status !== 'COMPLETE') {
        console.log(pc.yellow(`\nAssessment Status: ${result.status}`));
+       if (result.status === 'PARTIAL') {
+         console.log(pc.yellow(`  ⚠️ WARNING: The assessment is based on incomplete evidence. Some data could not be fetched or detectors failed.`));
+       }
        for (const err of result.errors) {
          console.log(pc.red(`  - [${err.source}] ${err.code}: ${err.message}`));
        }

@@ -200,9 +200,11 @@ This decoupled architecture allows the community to easily write and integrate n
 * **Malware**: It does not scan code for malicious payloads.
 * **Vulnerabilities**: It does not replace CVE scanners (like `npm audit`).
 
-**Interpreting Scores:**
-* Risk scores highlight the probability of a supply chain attack based on origin signals. 
-* Unavailable data (e.g., missing GitHub repo) is treated as a risk factor, not as "SAFE".
+**Interpreting Scores & Statuses:**
+* Risk scores highlight the probability of a supply chain attack based on origin signals.
+* **COMPLETE**: All detectors ran successfully with full metadata.
+* **PARTIAL**: The assessment score is based on incomplete evidence. This occurs if some metadata could not be fetched (e.g., GitHub rate limits) or a detector crashed. A partial assessment should not be fully trusted.
+* **UNAVAILABLE**: A complete failure to fetch primary package metadata (e.g., npm rate limits or network failure). This is an operational error, *not* a security risk signal. The score will be `null` and the exit code will be `2`.
 * **Always review critical dependencies manually** before integrating them into production code.
 
 ---

@@ -103,6 +103,9 @@ export async function scanCommand(packageJsonPath: string, options: CheckOptions
         console.log(`${pc.bold(r.package)} - Risk Level: ${getRiskColor(r.level)(r.level)} (Score: ${r.score !== null ? r.score : 'N/A'})`);
         if (r.status !== 'COMPLETE') {
           console.log(pc.yellow(`  - Assessment Status: ${r.status}`));
+          if (r.status === 'PARTIAL') {
+            console.log(pc.yellow(`    ⚠️ WARNING: The assessment is based on incomplete evidence.`));
+          }
           for (const err of r.errors) {
             console.log(pc.red(`  - [${err.source}] ${err.code}: ${err.message}`));
           }

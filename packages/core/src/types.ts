@@ -98,4 +98,8 @@ export interface RiskAssessment {
   readonly factors: readonly RiskFactor[];
   readonly recommendations: readonly string[];
   readonly errors: readonly AssessmentError[];
+  readonly scoring?: {
+    readonly totalWeightedScore: number;
+    readonly totalWeight: number;
+  };
 }

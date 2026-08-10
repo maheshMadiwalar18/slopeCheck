@@ -31,27 +31,29 @@ export class RiskEngine {
             }
           }
         } else {
-          console.error(`Plugin ${plugin.name} failed with error:`, result.error);
+          errors.push({
+            source: plugin.name,
+            code: 'PLUGIN_ERROR',
+            message: result.error instanceof Error ? result.error.message : String(result.error),
+          });
+          if (status === 'COMPLETE') status = 'PARTIAL';
         }
       } catch (e) {
-        console.error(`Plugin ${plugin.name} threw an unexpected error:`, e);
+        errors.push({
+          source: plugin.name,
+          code: 'PLUGIN_CRASH',
+          message: e instanceof Error ? e.message : String(e),
+        });
+        if (status === 'COMPLETE') status = 'PARTIAL';
       }
     }
 
-    let finalScore = totalWeight > 0 ? Math.min(Math.round(totalWeightedScore / totalWeight), 100) : 0;
+    let finalScore: number | null = totalWeight > 0 ? Math.min(Math.round(totalWeightedScore / totalWeight), 100) : 0;
     let level: RiskLevel = 'SAFE';
 
-    // Fail-Closed: If we have zero weight (no factors scored) but the assessment had errors
-    // (e.g., UNAVAILABLE metadata), we must NOT consider the package SAFE.
     if (totalWeight === 0 && (status === 'UNAVAILABLE' || errors.length > 0)) {
-      finalScore = 100;
-      level = 'CRITICAL';
-      factors.push({
-        name: 'MissingDataFallback',
-        description: 'Crucial security data could not be retrieved. Assuming maximum risk.',
-        score: 100,
-        weight: 1.0,
-      });
+      finalScore = null;
+      level = 'UNKNOWN';
     } else {
       if (finalScore >= 80) level = 'CRITICAL';
       else if (finalScore >= 60) level = 'HIGH';
@@ -61,12 +63,16 @@ export class RiskEngine {
     return {
       package: context.name,
       status,
-      assessable: true,
+      assessable: finalScore !== null,
       score: finalScore,
       level,
       factors,
       recommendations,
       errors,
+      scoring: {
+        totalWeightedScore,
+        totalWeight,
+      }
     };
   }
 }

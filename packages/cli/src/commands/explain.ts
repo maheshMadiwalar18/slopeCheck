@@ -25,14 +25,11 @@ export async function explainCommand(packageName: string) {
   );
   console.log(`  ${'─'.repeat(24)} ${'─'.repeat(6)} ${'─'.repeat(7)} ${'─'.repeat(9)}`);
 
-  let totalWeightedScore = 0;
-  let totalWeight = 0;
+  let totalWeightedScore = result.scoring?.totalWeightedScore ?? 0;
+  let totalWeight = result.scoring?.totalWeight ?? 0;
 
   for (const factor of result.factors) {
     const weighted = factor.score * factor.weight;
-    totalWeightedScore += weighted;
-    totalWeight += factor.weight;
-
     const scoreStr = `${factor.score}`.padStart(6);
     const weightStr = `x${factor.weight.toFixed(1)}`.padStart(7);
     const weightedStr = `${weighted.toFixed(0)}`.padStart(9);
@@ -50,6 +47,13 @@ export async function explainCommand(packageName: string) {
   console.log(
     pc.gray(`\n  Final = Σ(score × weight) / Σ(weight) = ${totalWeightedScore.toFixed(0)} / ${totalWeight.toFixed(1)} = ${avgScore}`)
   );
+
+  if (result.status === 'PARTIAL') {
+    console.log(pc.yellow('\n⚠️  WARNING: This is a PARTIAL assessment. Some data could not be fetched or some detectors failed.'));
+    console.log(pc.yellow('    The final score is based on incomplete evidence and may not reflect the full risk.'));
+  } else if (result.status === 'UNAVAILABLE') {
+    console.log(pc.red('\n❌  ERROR: The assessment is UNAVAILABLE due to registry errors or timeouts.'));
+  }
 
   // Recommendations
   if (result.recommendations.length > 0) {
