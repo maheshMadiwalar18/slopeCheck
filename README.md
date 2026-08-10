@@ -153,12 +153,12 @@ The CLI uses strict exit codes:
 
 ```mermaid
 flowchart TD
-    CLI[CLI (slopcheck-agent)] --> Core[Core Risk Engine]
-    Core --> Detectors[Heuristic Detectors]
-    Detectors --> Registry[Registry Client]
-    Detectors --> Datasets[Datasets]
-    Registry --> NPM[NPM API]
-    Registry --> GitHub[GitHub API]
+    CLI["CLI (slopcheck-agent)"] --> Core["Core Risk Engine"]
+    Core --> Detectors["Heuristic Detectors"]
+    Detectors --> Registry["Registry Client"]
+    Detectors --> Datasets["Datasets"]
+    Registry --> NPM["NPM API"]
+    Registry --> GitHub["GitHub API"]
 ```
 
 * **CLI**: The command-line interface handling user input and structured output.
