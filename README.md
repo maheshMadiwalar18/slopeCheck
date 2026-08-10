@@ -201,11 +201,20 @@ This decoupled architecture allows the community to easily write and integrate n
 * **Malware**: It does not scan code for malicious payloads.
 * **Vulnerabilities**: It does not replace CVE scanners (like `npm audit`).
 
+**Identity & Impersonation:**
+* **Package Identity:** npm package identity includes scope. `@org/react` is fundamentally a different package than `react`. Slopcheck will not automatically assume scoped packages are malicious just because their scope differs.
+* **Similarity:** Similarity detection acts as a strong heuristic signal, not automatic proof of maliciousness. A scoped package exactly mimicking a popular package basename will trigger an impersonation warning.
+
+**Scoring Mechanics (Anti-Dilution):**
+* **Hard Signals:** Critical security signals (like a confirmed hallucination or direct impersonation) produce "hard" scores. These scores serve as a floor and **cannot be diluted** by adding weak, seemingly-safe metadata (like length of a README).
+* **Heuristic Signals:** Normal factors (age, downloads, missing metadata) are combined using a weighted average. Missing metadata is not proof of maliciousness; it is a heuristic penalty.
+* **Final Score:** The final risk score is the maximum of the hard signal scores and the combined heuristic average.
+
 **Interpreting Scores & Statuses:**
 * Risk scores highlight the probability of a supply chain attack based on origin signals.
 * **COMPLETE**: All detectors ran successfully with full metadata.
 * **PARTIAL**: The assessment score is based on incomplete evidence. This occurs if some metadata could not be fetched (e.g., GitHub rate limits) or a detector crashed. A partial assessment should not be fully trusted.
-* **UNAVAILABLE**: A complete failure to fetch primary package metadata (e.g., npm rate limits or network failure). This is an operational error, *not* a security risk signal. The score will be `null` and the exit code will be `2`.
+* **UNAVAILABLE**: A complete failure to fetch primary package metadata (e.g., npm rate limits or network failure). This is an operational error, *not* a SAFE assessment. The score will be `null` and the exit code will be `2`.
 * **Always review critical dependencies manually** before integrating them into production code.
 
 ---

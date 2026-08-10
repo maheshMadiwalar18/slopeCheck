@@ -80,6 +80,19 @@ describe('PopularityDetector', () => {
     if (isSuccess(result)) {
       expect(result.value.length).toBe(1);
       expect(result.value[0]!.score).toBe(85);
+      expect(result.value[0]!.severityClass).toBe('heuristic');
+    }
+  });
+
+  it('should apply a reduced penalty for a highly downloaded scoped package missing a GitHub repo', async () => {
+    const ctx: PackageContext = { name: '@corp/internal-pkg', downloads: makeDl(100_000) };
+    const result = await detector.analyze(ctx);
+
+    expect(isSuccess(result)).toBe(true);
+    if (isSuccess(result)) {
+      expect(result.value.length).toBe(1);
+      expect(result.value[0]!.score).toBe(50);
+      expect(result.value[0]!.severityClass).toBe('heuristic');
     }
   });
 

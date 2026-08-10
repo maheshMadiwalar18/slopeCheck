@@ -13,12 +13,24 @@ export class PopularityDetector implements DetectorPlugin {
 
       if (dl >= 5000) {
         if (!context.github || context.github.stargazers_count < 10) {
-          return ok([{
-            name: this.name,
-            description: `Package has unusually high downloads (${dl}) but missing or low-star GitHub repository. Possible bot inflation.`,
-            score: 85,
-            weight: 2.0,
-          }]);
+          const isScoped = context.name.startsWith('@') && context.name.includes('/');
+          if (isScoped) {
+            return ok([{
+              name: this.name,
+              description: `Scoped package has unusually high downloads (${dl}) but missing or low-star GitHub repository. May be internal corporate package.`,
+              score: 50,
+              weight: 1.0,
+              severityClass: 'heuristic',
+            }]);
+          } else {
+            return ok([{
+              name: this.name,
+              description: `Package has unusually high downloads (${dl}) but missing or low-star GitHub repository. Possible bot inflation.`,
+              score: 85,
+              weight: 2.0,
+              severityClass: 'heuristic',
+            }]);
+          }
         }
         return ok([]);
       }
@@ -35,6 +47,7 @@ export class PopularityDetector implements DetectorPlugin {
         description: `Package has only ${dl} weekly downloads.`,
         score,
         weight: 1.2,
+        severityClass: 'heuristic',
       }]);
     } catch (e) {
       return fail(e instanceof Error ? e : new Error('Unknown error in PopularityDetector'));

@@ -21,6 +21,9 @@ export async function scanCommand(packageJsonPath: string, options: CheckOptions
   let content: string;
   try {
     const fullPath = path.resolve(process.cwd(), packageJsonPath);
+    if (!fullPath.endsWith('.json')) {
+      throw new Error('Input path must be a .json file');
+    }
     // Basic path traversal prevention (ensure it stays within intended directory if needed, 
     // though local scans are usually safe. It's best practice not to resolve arbitrary system files.)
     content = await fs.readFile(fullPath, 'utf-8');

@@ -25,6 +25,22 @@ export class SimilarityDetector implements DetectorPlugin {
         const normalizedPopular = this.normalize(popular);
         const dist = distance(normalizedContextName, normalizedPopular);
 
+        // EXACT BASENAME MATCH (distance 0)
+        if (dist === 0) {
+          if (context.name !== popular) {
+            return ok([{
+              name: this.name,
+              description: `SCOPE_IMPERSONATION: Scoped package '${context.name}' shares the exact basename of popular package '${popular}'`,
+              score: 95,
+              weight: 3.0,
+              severityClass: 'hard',
+            }]);
+          } else {
+            // It IS the popular package (e.g. react === react)
+            return ok([]);
+          }
+        }
+
         // If it's a 1-character typo of a massively popular package
         if (dist === 1) {
           return ok([{
@@ -32,6 +48,7 @@ export class SimilarityDetector implements DetectorPlugin {
             description: `Package name '${context.name}' is highly similar to popular package '${popular}' (Levenshtein distance 1)`,
             score: 95,
             weight: 2.5,
+            severityClass: 'strong',
           }]);
         }
         
@@ -42,6 +59,7 @@ export class SimilarityDetector implements DetectorPlugin {
             description: `Package name '${context.name}' is similar to popular package '${popular}' (Levenshtein distance 2)`,
             score: 60,
             weight: 1.5,
+            severityClass: 'strong',
           }]);
         }
       }

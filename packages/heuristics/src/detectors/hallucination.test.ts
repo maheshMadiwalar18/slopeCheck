@@ -25,7 +25,8 @@ describe('HallucinationDetector', () => {
       expect(result.value.length).toBe(1);
       expect(result.value[0]!.score).toBe(100);
       expect(result.value[0]!.weight).toBe(3.0);
-      expect(result.value[0]!.description).toContain('AI hallucination');
+      expect(result.value[0]!.severityClass).toBe('hard');
+      expect(result.value[0]!.description).toContain('EXACT_HALLUCINATION_MATCH');
     }
   });
 
@@ -37,8 +38,34 @@ describe('HallucinationDetector', () => {
     if (isSuccess(result)) {
       expect(result.value.length).toBe(1);
       expect(result.value[0]!.score).toBe(100);
-      expect(result.value[0]!.weight).toBe(3.0);
-      expect(result.value[0]!.description).toContain('AI hallucination');
+      expect(result.value[0]!.severityClass).toBe('hard');
+      expect(result.value[0]!.description).toContain('EXACT_HALLUCINATION_MATCH');
+    }
+  });
+
+  it('should flag a scoped variant of a hallucination list package', async () => {
+    const ctx: PackageContext = { name: '@evil/react-codeshift' };
+    const result = await detector.analyze(ctx);
+
+    expect(isSuccess(result)).toBe(true);
+    if (isSuccess(result)) {
+      expect(result.value.length).toBe(1);
+      expect(result.value[0]!.score).toBe(80);
+      expect(result.value[0]!.severityClass).toBe('strong');
+      expect(result.value[0]!.description).toContain('HALLUCINATED_BASENAME_VARIANT');
+    }
+  });
+
+  it('should flag a cased variant of a hallucination list package', async () => {
+    const ctx: PackageContext = { name: 'React-codeshift' };
+    const result = await detector.analyze(ctx);
+
+    expect(isSuccess(result)).toBe(true);
+    if (isSuccess(result)) {
+      expect(result.value.length).toBe(1);
+      expect(result.value[0]!.score).toBe(80);
+      expect(result.value[0]!.severityClass).toBe('strong');
+      expect(result.value[0]!.description).toContain('HALLUCINATED_BASENAME_VARIANT');
     }
   });
 

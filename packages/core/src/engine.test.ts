@@ -68,6 +68,32 @@ describe('RiskEngine', () => {
     expect(result.scoring?.totalWeight).toBe(1.0);
   });
 
+  it('should not dilute hard severity factors with low score heuristic factors', async () => {
+    const hardPlugin: DetectorPlugin = {
+      name: 'HardPlugin',
+      analyze: async () => ok([{ name: 'Malicious', description: 'desc', score: 100, weight: 3.0, severityClass: 'hard' }])
+    };
+    
+    const weakPlugin: DetectorPlugin = {
+      name: 'WeakPlugin',
+      analyze: async () => ok([{ name: 'Age', description: 'desc', score: 20, weight: 1.5, severityClass: 'heuristic' }])
+    };
+
+    const registry = new PluginRegistry();
+    registry.register(hardPlugin);
+    registry.register(weakPlugin);
+
+    const engine = new RiskEngine(registry);
+    const ctx: PackageContext = { name: 'test-pkg' };
+    
+    const result = await engine.evaluate(ctx);
+    
+    // (100*3 + 20*1.5) / 4.5 = 330 / 4.5 = 73.3 (HIGH)
+    // But since HardPlugin is 100 (hard), finalScore should be Math.max(73, 100) = 100 (CRITICAL)
+    expect(result.score).toBe(100);
+    expect(result.level).toBe('CRITICAL');
+  });
+
   it('should mutate status to PARTIAL and log error if a plugin fails', async () => {
     const mockPlugin: DetectorPlugin = {
       name: 'FailingPlugin',

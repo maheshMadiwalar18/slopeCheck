@@ -11,8 +11,8 @@ export interface HallucinationRecord {
 }
 
 const HallucinationRecordSchema = z.object({
-  package: z.string(),
-  source: z.string(),
+  package: z.string().regex(/^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/, "Invalid npm package name format"),
+  source: z.string().min(1),
   date_added: z.string(),
   notes: z.string().optional(),
 });

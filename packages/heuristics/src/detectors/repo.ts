@@ -8,12 +8,15 @@ export class RepoDetector implements DetectorPlugin {
     try {
       if (!context.npm) return ok([]);
 
+      const isScoped = context.name.startsWith('@') && context.name.includes('/');
+
       if (!context.npm.repository) {
         return ok([{
           name: this.name,
           description: `No repository field declared in package.json`,
-          score: 80,
-          weight: 1.0,
+          score: isScoped ? 40 : 80,
+          weight: isScoped ? 0.5 : 1.0,
+          severityClass: 'heuristic',
         }]);
       }
 
@@ -24,6 +27,7 @@ export class RepoDetector implements DetectorPlugin {
             description: `The linked GitHub repository is archived.`,
             score: 70,
             weight: 1.0,
+            severityClass: 'heuristic',
           }]);
         }
       } else {
@@ -32,8 +36,9 @@ export class RepoDetector implements DetectorPlugin {
            return ok([{
              name: this.name,
              description: `The linked GitHub repository is missing or inaccessible.`,
-             score: 95,
-             weight: 2.0,
+             score: isScoped ? 50 : 95,
+             weight: isScoped ? 1.0 : 2.0,
+             severityClass: 'heuristic',
            }]);
         }
       }

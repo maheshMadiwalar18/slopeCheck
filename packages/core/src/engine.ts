@@ -15,6 +15,7 @@ export class RiskEngine {
     let totalWeight = 0;
     const contributions: import('./types').RiskContribution[] = [];
     const recommendations: string[] = [];
+    let maxHardScore = 0;
 
     for (const plugin of this.registry.getPlugins()) {
       try {
@@ -30,6 +31,11 @@ export class RiskEngine {
                 weight: factor.weight,
                 contribution,
               });
+              
+              if (factor.severityClass === 'hard') {
+                maxHardScore = Math.max(maxHardScore, factor.score);
+              }
+              
               totalWeightedScore += contribution;
               totalWeight += factor.weight;
 
@@ -69,6 +75,7 @@ export class RiskEngine {
         scoring: {
           totalWeightedScore,
           totalWeight,
+          finalScore: 0,
           contributions,
         },
       };
@@ -81,9 +88,12 @@ export class RiskEngine {
       finalScore = null;
       level = 'UNKNOWN';
     } else {
-      if (finalScore !== null && finalScore >= 80) level = 'CRITICAL';
-      else if (finalScore !== null && finalScore >= 60) level = 'HIGH';
-      else if (finalScore !== null && finalScore >= 30) level = 'SUSPICIOUS';
+      if (finalScore !== null) {
+        finalScore = Math.max(finalScore, maxHardScore);
+        if (finalScore >= 80) level = 'CRITICAL';
+        else if (finalScore >= 60) level = 'HIGH';
+        else if (finalScore >= 30) level = 'SUSPICIOUS';
+      }
     }
 
     return {
@@ -98,6 +108,7 @@ export class RiskEngine {
       scoring: {
         totalWeightedScore,
         totalWeight,
+        finalScore: finalScore ?? 0,
         contributions,
       }
     };

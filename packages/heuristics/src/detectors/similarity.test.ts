@@ -42,6 +42,32 @@ describe('SimilarityDetector', () => {
     }
   });
 
+  it('should flag a scoped impersonation of a popular package', async () => {
+    const ctx: PackageContext = { name: '@evil/react' };
+    const result = await detector.analyze(ctx);
+
+    expect(isSuccess(result)).toBe(true);
+    if (isSuccess(result)) {
+      expect(result.value.length).toBe(1);
+      expect(result.value[0]!.score).toBe(95);
+      expect(result.value[0]!.severityClass).toBe('hard');
+      expect(result.value[0]!.description).toContain('SCOPE_IMPERSONATION');
+    }
+  });
+
+  it('should flag a scoped typosquat of a popular package', async () => {
+    const ctx: PackageContext = { name: '@evil/reactt' };
+    const result = await detector.analyze(ctx);
+
+    expect(isSuccess(result)).toBe(true);
+    if (isSuccess(result)) {
+      expect(result.value.length).toBe(1);
+      expect(result.value[0]!.score).toBe(95);
+      expect(result.value[0]!.severityClass).toBe('strong');
+      expect(result.value[0]!.description).toContain('distance 1');
+    }
+  });
+
   it('should pass a completely unrelated package name', async () => {
     const ctx: PackageContext = { name: 'my-custom-utility-library-xyz' };
     const result = await detector.analyze(ctx);

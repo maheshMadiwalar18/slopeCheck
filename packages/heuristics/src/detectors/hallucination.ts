@@ -8,14 +8,32 @@ export class HallucinationDetector implements DetectorPlugin {
   async analyze(context: PackageContext): Promise<Result<RiskFactor[], Error>> {
     try {
       const map = await getHallucinationMap();
-      const record = map.get(context.name);
+      const exactRecord = map.get(context.name);
 
-      if (record) {
+      if (exactRecord) {
         return ok([{
           name: this.name,
-          description: `Package is on the AI hallucination list (Source: ${record.source})`,
-          score: 100, // Safe default high score since we can't cleanly distinguish official vs community based on array anymore without extra data, but source is preserved. Or we could check if record.source includes 'community' maybe? Let's just use 100.
+          description: `EXACT_HALLUCINATION_MATCH: Package is explicitly on the AI hallucination list (Source: ${exactRecord.source})`,
+          score: 100,
           weight: 3.0,
+          severityClass: 'hard',
+        }]);
+      }
+
+      // Not an exact match. Check if the basename matches a known hallucination.
+      const basename = context.name.includes('/') ? context.name.split('/').pop()! : context.name;
+      const normalizedBasename = basename.toLowerCase();
+      
+      // We look for a hallucination entry that exactly matches our basename
+      const variantRecord = map.get(normalizedBasename);
+      
+      if (variantRecord && context.name !== normalizedBasename) {
+        return ok([{
+          name: this.name,
+          description: `HALLUCINATED_BASENAME_VARIANT: Package shares its basename with a known hallucinated package (Source: ${variantRecord.source})`,
+          score: 80,
+          weight: 2.0,
+          severityClass: 'strong',
         }]);
       }
 

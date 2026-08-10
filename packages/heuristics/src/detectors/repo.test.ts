@@ -65,6 +65,22 @@ describe('RepoDetector', () => {
     }
   });
 
+  it('should apply a reduced penalty for a scoped package with no repository field', async () => {
+    const ctx: PackageContext = {
+      name: '@corp/internal-pkg',
+      npm: { ...baseNpm, name: '@corp/internal-pkg', repository: undefined },
+    };
+    const result = await detector.analyze(ctx);
+
+    expect(isSuccess(result)).toBe(true);
+    if (isSuccess(result)) {
+      expect(result.value.length).toBe(1);
+      expect(result.value[0]!.score).toBe(40);
+      expect(result.value[0]!.weight).toBe(0.5);
+      expect(result.value[0]!.severityClass).toBe('heuristic');
+    }
+  });
+
   it('should return empty factors when npm data is missing', async () => {
     const ctx: PackageContext = { name: 'test-pkg' };
     const result = await detector.analyze(ctx);

@@ -22,6 +22,8 @@ export interface RiskFactor {
   readonly score: number;
   /** Weight in the final aggregation. Higher = more influence. */
   readonly weight: number;
+  /** Classification of the signal severity to determine if it can be diluted. */
+  readonly severityClass?: 'hard' | 'strong' | 'heuristic' | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -108,6 +110,7 @@ export interface RiskAssessment {
   readonly scoring?: {
     readonly totalWeightedScore: number;
     readonly totalWeight: number;
+    readonly finalScore: number;
     readonly contributions: readonly RiskContribution[];
   };
 }
