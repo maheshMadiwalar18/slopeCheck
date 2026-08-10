@@ -73,7 +73,8 @@ async function main() {
       console.log(`📦 ${pc.bold(f.package)}`);
       console.log(`   Expected: ${f.expectedBehavior}`);
       console.log(`   Actual:   ${f.actualLevel} (Score: ${f.score})`);
-      console.log(`   Notes:    ${f.notes}\n`);
+      console.log(`   Source:   ${f.source} (${f.sourceType})`);
+      console.log(`   Rationale: ${f.rationale}\n`);
     }
   } else {
     console.log('\n' + pc.green('✅ All test cases match expected behavior!'));

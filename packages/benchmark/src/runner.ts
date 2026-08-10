@@ -10,7 +10,9 @@ export interface EvaluationResult {
   isMatch: boolean;
   score: number | null;
   status: string;
-  notes?: string;
+  source: string;
+  sourceType: string;
+  rationale: string;
 }
 
 export interface RunMetrics {
@@ -80,7 +82,9 @@ export async function runBenchmark(corpus: readonly TestCase[]): Promise<{
         isMatch: testCase.expectedBehavior === 'UNSUPPORTED',
         score: null,
         status: 'UNSUPPORTED',
-        notes: testCase.notes,
+        source: testCase.source,
+        sourceType: testCase.sourceType,
+        rationale: testCase.rationale,
       });
       continue;
     }
@@ -115,7 +119,9 @@ export async function runBenchmark(corpus: readonly TestCase[]): Promise<{
       isMatch,
       score: res.score,
       status: res.status,
-      notes: testCase.notes,
+      source: testCase.source,
+      sourceType: testCase.sourceType,
+      rationale: testCase.rationale,
     });
   }
 
