@@ -27,7 +27,7 @@ export class HallucinationDetector implements DetectorPlugin {
       // We look for a hallucination entry that exactly matches our basename
       const variantRecord = map.get(normalizedBasename);
       
-      if (variantRecord && context.name !== normalizedBasename) {
+      if (variantRecord && context.name !== variantRecord.package) {
         return ok([{
           name: this.name,
           description: `HALLUCINATED_BASENAME_VARIANT: Package shares its basename with a known hallucinated package (Source: ${variantRecord.source})`,

@@ -52,12 +52,14 @@ export async function scanCommand(packageJsonPath: string, options: CheckOptions
     return;
   }
 
-  const packages = [
+  const allPackages = [
     ...Object.keys(pkg.dependencies || {}),
     ...Object.keys(pkg.devDependencies || {}),
-  ].filter(isValidPackageName);
+  ];
+  const validPackages = allPackages.filter(isValidPackageName);
+  const skippedPackages = allPackages.filter(p => !isValidPackageName(p));
 
-  if (packages.length === 0) {
+  if (allPackages.length === 0) {
     if (options.json) {
       console.log(JSON.stringify([], null, 2));
     } else {
@@ -65,6 +67,14 @@ export async function scanCommand(packageJsonPath: string, options: CheckOptions
     }
     process.exitCode = 0;
     return;
+  }
+
+  if (skippedPackages.length > 0 && !options.json) {
+    console.log(pc.yellow(`⚠️ Skipping ${skippedPackages.length} dependencies with unsupported identifiers (e.g., local files, git URLs):`));
+    for (const p of skippedPackages) {
+      console.log(`  - ${pc.gray(p)}`);
+    }
+    console.log('');
   }
 
   const limit = pLimit(10);
@@ -77,10 +87,10 @@ export async function scanCommand(packageJsonPath: string, options: CheckOptions
       barIncompleteChar: '\u2591',
       hideCursor: true
     });
-    bar.start(packages.length, 0, { package: 'Starting...' });
+    bar.start(validPackages.length, 0, { package: 'Starting...' });
   }
 
-  const results = await Promise.all(packages.map(p => 
+  const results = await Promise.all(validPackages.map(p => 
     limit(async () => {
       if (bar) bar.update({ package: p });
       const res = await evaluatePackage(p);
@@ -92,13 +102,17 @@ export async function scanCommand(packageJsonPath: string, options: CheckOptions
   if (bar) bar.stop();
 
   if (options.json) {
-    console.log(JSON.stringify(results, null, 2));
+    const jsonOutput = {
+      results,
+      skipped: skippedPackages,
+    };
+    console.log(JSON.stringify(jsonOutput, null, 2));
   } else {
     console.log('\n');
     const riskyPackages = results.filter(r => (r.score !== null ? r.score : 0) >= 30 || r.status !== 'COMPLETE').sort((a, b) => (b.score || 0) - (a.score || 0));
     
     if (riskyPackages.length === 0) {
-      console.log(pc.green(`✅ All ${packages.length} dependencies appear safe.`));
+      console.log(pc.green(`✅ All ${validPackages.length} supported dependencies appear safe.`));
     } else {
       console.log(pc.yellow(`⚠️ Found ${riskyPackages.length} potentially risky dependencies:\n`));
 

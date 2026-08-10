@@ -30,6 +30,34 @@ importers:
         specifier: ^1.6.1
         version: 1.6.1(@types/node@26.1.2)(supports-color@7.2.0)
 
+  packages/benchmark:
+    dependencies:
+      '@slopcheck/core':
+        specifier: workspace:*
+        version: link:../core
+      '@slopcheck/registry':
+        specifier: workspace:*
+        version: link:../registry
+      picocolors:
+        specifier: ^1.0.1
+        version: 1.1.1
+      slopcheck-agent:
+        specifier: workspace:*
+        version: link:../cli
+      zod:
+        specifier: ^3.23.8
+        version: 3.25.76
+    devDependencies:
+      '@slopcheck/config':
+        specifier: workspace:*
+        version: link:../config
+      tsup:
+        specifier: ^8.0.2
+        version: 8.5.1(postcss@8.5.26)(supports-color@7.2.0)(typescript@5.9.3)(yaml@2.9.0)
+      typescript:
+        specifier: ^5.4.5
+        version: 5.9.3
+
   packages/cli:
     dependencies:
       '@slopcheck/core':

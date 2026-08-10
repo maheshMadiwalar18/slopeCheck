@@ -1,5 +1,5 @@
 import type { PackageContext, RiskAssessment, AssessmentStatus, AssessmentError } from '@slopcheck/core';
-import { RiskEngine, PluginRegistry } from '@slopcheck/core';
+import { RiskEngine, PluginRegistry, isFailure } from '@slopcheck/core';
 import { fetchNpmMetadata, fetchNpmDownloads, fetchGithubMetadata } from '@slopcheck/registry';
 import { 
   AgeDetector, 
@@ -33,7 +33,7 @@ export async function evaluatePackage(packageName: string, version?: string): Pr
   const errors: AssessmentError[] = [];
 
   const npmRes = await fetchNpmMetadata(packageName);
-  if (!npmRes.ok) {
+  if (isFailure(npmRes)) {
     const error: AssessmentError = {
       source: 'npm',
       code: npmRes.error.status === 404 ? 'PACKAGE_NOT_FOUND' : 'REGISTRY_ERROR',
@@ -58,7 +58,7 @@ export async function evaluatePackage(packageName: string, version?: string): Pr
   } else {
     context.npm = npmRes.value;
     const dlRes = await fetchNpmDownloads(packageName);
-    if (!dlRes.ok) {
+    if (isFailure(dlRes)) {
       status = 'PARTIAL';
       errors.push({
         source: 'npm_downloads',
@@ -72,7 +72,7 @@ export async function evaluatePackage(packageName: string, version?: string): Pr
     if (context.npm.repository) {
       const repoUrl = typeof context.npm.repository === 'string' ? context.npm.repository : context.npm.repository.url;
       const ghRes = await fetchGithubMetadata(repoUrl);
-      if (!ghRes.ok) {
+      if (isFailure(ghRes)) {
         status = 'PARTIAL';
         errors.push({
           source: 'github',

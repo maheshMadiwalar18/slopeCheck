@@ -42,6 +42,17 @@ describe('SimilarityDetector', () => {
     }
   });
 
+  it('should not flag a legitimate scoped package as a typosquat of an unscoped package when basename is entirely different', async () => {
+    // Proves that scope stripping doesn't cause false identity collisions
+    const ctx: PackageContext = { name: '@angular/core' };
+    const result = await detector.analyze(ctx);
+
+    expect(isSuccess(result)).toBe(true);
+    if (isSuccess(result)) {
+      expect(result.value.length).toBe(0);
+    }
+  });
+
   it('should flag a scoped impersonation of a popular package', async () => {
     const ctx: PackageContext = { name: '@evil/react' };
     const result = await detector.analyze(ctx);

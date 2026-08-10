@@ -8,6 +8,11 @@ vi.mock('@slopcheck/datasets', () => {
   map.set('react-codeshift', { package: 'react-codeshift', source: 'ChatGPT hallucination', date_added: '2024-03-15' });
   map.set('express-router-v2', { package: 'express-router-v2', source: 'ChatGPT hallucination', date_added: '2024-03-15' });
   map.set('discord-token-grabber-x', { package: 'discord-token-grabber-x', source: 'community report', date_added: '2024-05-10' });
+  // Add an entry with inconsistent casing that the real dataset loader would canonicalize,
+  // but we mock it canonicalized because `getHallucinationMap` in real code handles the canonicalization.
+  // Wait, if `getHallucinationMap` canonicalizes, then the mocked map should represent the *output* of `getHallucinationMap`.
+  // The output of `getHallucinationMap` has lowercase keys.
+  map.set('mixed-case-pkg', { package: 'MiXeD-CaSe-PkG', source: 'test case', date_added: '2024-05-10' });
   return {
     getHallucinationMap: vi.fn().mockResolvedValue(map),
   };
@@ -58,6 +63,35 @@ describe('HallucinationDetector', () => {
 
   it('should flag a cased variant of a hallucination list package', async () => {
     const ctx: PackageContext = { name: 'React-codeshift' };
+    const result = await detector.analyze(ctx);
+
+    expect(isSuccess(result)).toBe(true);
+    if (isSuccess(result)) {
+      expect(result.value.length).toBe(1);
+      expect(result.value[0]!.score).toBe(80);
+      expect(result.value[0]!.severityClass).toBe('strong');
+      expect(result.value[0]!.description).toContain('HALLUCINATED_BASENAME_VARIANT');
+    }
+  });
+
+  it('should flag an EXACT_HALLUCINATION_MATCH when querying with the exact inconsistent casing of the dataset record', async () => {
+    // Dataset record: { package: 'MiXeD-CaSe-PkG' }
+    const ctx: PackageContext = { name: 'MiXeD-CaSe-PkG' };
+    const result = await detector.analyze(ctx);
+
+    expect(isSuccess(result)).toBe(true);
+    if (isSuccess(result)) {
+      expect(result.value.length).toBe(1);
+      expect(result.value[0]!.score).toBe(100);
+      expect(result.value[0]!.severityClass).toBe('hard');
+      expect(result.value[0]!.description).toContain('EXACT_HALLUCINATION_MATCH');
+    }
+  });
+
+  it('should flag a HALLUCINATED_BASENAME_VARIANT when querying a lowercase variant of a mixed-case dataset record', async () => {
+    // Dataset record: { package: 'MiXeD-CaSe-PkG' }
+    // User queries: 'mixed-case-pkg'
+    const ctx: PackageContext = { name: 'mixed-case-pkg' };
     const result = await detector.analyze(ctx);
 
     expect(isSuccess(result)).toBe(true);
