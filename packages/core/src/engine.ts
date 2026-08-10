@@ -13,6 +13,7 @@ export class RiskEngine {
     const factors: RiskFactor[] = [];
     let totalWeightedScore = 0;
     let totalWeight = 0;
+    const contributions: import('./types').RiskContribution[] = [];
     const recommendations: string[] = [];
 
     for (const plugin of this.registry.getPlugins()) {
@@ -21,8 +22,15 @@ export class RiskEngine {
         if (isSuccess(result)) {
           for (const factor of result.value) {
             if (factor.score > 0) {
+              const contribution = factor.score * factor.weight;
               factors.push(factor);
-              totalWeightedScore += factor.score * factor.weight;
+              contributions.push({
+                factor: factor.name,
+                score: factor.score,
+                weight: factor.weight,
+                contribution,
+              });
+              totalWeightedScore += contribution;
               totalWeight += factor.weight;
 
               if (factor.score >= 80) {
@@ -48,16 +56,34 @@ export class RiskEngine {
       }
     }
 
+    if (status === 'UNAVAILABLE') {
+      return {
+        package: context.name,
+        status,
+        assessable: false,
+        score: null,
+        level: 'UNKNOWN',
+        factors,
+        recommendations: [],
+        errors,
+        scoring: {
+          totalWeightedScore,
+          totalWeight,
+          contributions,
+        },
+      };
+    }
+
     let finalScore: number | null = totalWeight > 0 ? Math.min(Math.round(totalWeightedScore / totalWeight), 100) : 0;
     let level: RiskLevel = 'SAFE';
 
-    if (totalWeight === 0 && (status === 'UNAVAILABLE' || errors.length > 0)) {
+    if (totalWeight === 0 && errors.length > 0) {
       finalScore = null;
       level = 'UNKNOWN';
     } else {
-      if (finalScore >= 80) level = 'CRITICAL';
-      else if (finalScore >= 60) level = 'HIGH';
-      else if (finalScore >= 30) level = 'SUSPICIOUS';
+      if (finalScore !== null && finalScore >= 80) level = 'CRITICAL';
+      else if (finalScore !== null && finalScore >= 60) level = 'HIGH';
+      else if (finalScore !== null && finalScore >= 30) level = 'SUSPICIOUS';
     }
 
     return {
@@ -72,6 +98,7 @@ export class RiskEngine {
       scoring: {
         totalWeightedScore,
         totalWeight,
+        contributions,
       }
     };
   }

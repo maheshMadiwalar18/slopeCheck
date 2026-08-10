@@ -46,6 +46,28 @@ describe('RiskEngine', () => {
     expect(result.assessable).toBe(false);
   });
 
+  it('should return UNKNOWN and null score when status is UNAVAILABLE even if detectors return factors', async () => {
+    const mockPlugin: DetectorPlugin = {
+      name: 'IndependentPlugin',
+      analyze: async () => ok([{ name: 'TestFactor', description: 'desc', score: 100, weight: 1.0 }])
+    };
+
+    const registry = new PluginRegistry();
+    registry.register(mockPlugin);
+
+    const engine = new RiskEngine(registry);
+    const ctx: PackageContext = { name: 'test-pkg' };
+    
+    const result = await engine.evaluate(ctx, 'UNAVAILABLE', [{source: 'npm', code: 'TIMEOUT', message: 'timeout'}]);
+    
+    expect(result.score).toBeNull();
+    expect(result.level).toBe('UNKNOWN');
+    expect(result.status).toBe('UNAVAILABLE');
+    expect(result.assessable).toBe(false);
+    expect(result.factors.length).toBe(1);
+    expect(result.scoring?.totalWeight).toBe(1.0);
+  });
+
   it('should mutate status to PARTIAL and log error if a plugin fails', async () => {
     const mockPlugin: DetectorPlugin = {
       name: 'FailingPlugin',

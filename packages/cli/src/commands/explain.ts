@@ -29,7 +29,8 @@ export async function explainCommand(packageName: string) {
   let totalWeight = result.scoring?.totalWeight ?? 0;
 
   for (const factor of result.factors) {
-    const weighted = factor.score * factor.weight;
+    const contrib = result.scoring?.contributions.find(c => c.factor === factor.name);
+    const weighted = contrib?.contribution ?? 0;
     const scoreStr = `${factor.score}`.padStart(6);
     const weightStr = `x${factor.weight.toFixed(1)}`.padStart(7);
     const weightedStr = `${weighted.toFixed(0)}`.padStart(9);

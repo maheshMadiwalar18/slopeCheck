@@ -89,6 +89,13 @@ export interface AssessmentError {
 /**
  * The final risk assessment produced by the RiskEngine.
  */
+export interface RiskContribution {
+  readonly factor: string;
+  readonly score: number;
+  readonly weight: number;
+  readonly contribution: number;
+}
+
 export interface RiskAssessment {
   readonly package: string;
   readonly status: AssessmentStatus;
@@ -101,5 +108,6 @@ export interface RiskAssessment {
   readonly scoring?: {
     readonly totalWeightedScore: number;
     readonly totalWeight: number;
+    readonly contributions: readonly RiskContribution[];
   };
 }

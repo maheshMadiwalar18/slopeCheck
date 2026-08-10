@@ -85,7 +85,7 @@ slopcheck-agent doctor
 
 ---
 
-## Example Output
+## Example Output (Illustrative)
 
 ```text
 $ slopcheck-agent check suspicious-package
@@ -112,6 +112,7 @@ Do not install until the package provenance is verified.
 
 Security decisions should be understandable, not a mysterious black box. The `explain` command provides a transparent breakdown of how the final risk score was calculated across different heuristics.
 
+*Illustrative Example Output:*
 ```text
 $ slopcheck-agent explain suspicious-package
 
@@ -216,7 +217,7 @@ This decoupled architecture allows the community to easily write and integrate n
 | Hallucinated package detection |               ✓ |                      Limited |
 | Typosquat detection            |               ✓ |                      Depends |
 | Package metadata heuristics    |               ✓ |                       Varies |
-| AI-agent focused workflow      |       Planned/✓ |              Usually limited |
+| AI-agent focused workflow      |         Planned |              Usually limited |
 | Explainable findings           |               ✓ |                       Varies |
 | CVE Vulnerability Scanning     |     Out of scope|                            ✓ |
 
