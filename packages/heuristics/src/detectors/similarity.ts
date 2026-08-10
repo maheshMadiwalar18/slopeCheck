@@ -9,8 +9,8 @@ export class SimilarityDetector implements DetectorPlugin {
   private normalize(name: string): string {
     // Strip scope (e.g., @evil/react -> react)
     const withoutScope = name.includes('/') ? name.split('/').pop()! : name;
-    // Normalize Unicode (canonical decomposition) and convert to lowercase
-    return withoutScope.normalize('NFKD').toLowerCase().replace(/[^a-z0-9-.]/g, '');
+    // Normalize Unicode (canonical composition) and convert to lowercase
+    return withoutScope.normalize('NFKC').toLowerCase();
   }
 
   async analyze(context: PackageContext): Promise<Result<RiskFactor[], Error>> {
