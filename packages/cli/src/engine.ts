@@ -86,11 +86,5 @@ export async function evaluatePackage(packageName: string, version?: string): Pr
   }
 
   const engine = getEngine();
-  // Ensure that if we have unavailable npm metadata, assessable is technically false
-  if (status === 'UNAVAILABLE') {
-    const assessment = await engine.evaluate(context, status, errors);
-    return { ...assessment, assessable: false, score: null, level: 'UNKNOWN' };
-  }
-  
   return engine.evaluate(context, status, errors);
 }

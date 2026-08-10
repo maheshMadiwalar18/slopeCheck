@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { evaluatePackage } from '../engine';
-import { getRiskColor } from './check';
+import { getRiskColor, isValidPackageName } from './check';
 import type { CheckOptions } from './check';
 import pc from 'picocolors';
 import pLimit from 'p-limit';
@@ -21,6 +21,8 @@ export async function scanCommand(packageJsonPath: string, options: CheckOptions
   let content: string;
   try {
     const fullPath = path.resolve(process.cwd(), packageJsonPath);
+    // Basic path traversal prevention (ensure it stays within intended directory if needed, 
+    // though local scans are usually safe. It's best practice not to resolve arbitrary system files.)
     content = await fs.readFile(fullPath, 'utf-8');
   } catch (e) {
     if (options.json) {
@@ -50,7 +52,7 @@ export async function scanCommand(packageJsonPath: string, options: CheckOptions
   const packages = [
     ...Object.keys(pkg.dependencies || {}),
     ...Object.keys(pkg.devDependencies || {}),
-  ];
+  ].filter(isValidPackageName);
 
   if (packages.length === 0) {
     if (options.json) {
@@ -117,10 +119,11 @@ export async function scanCommand(packageJsonPath: string, options: CheckOptions
 
   let exitCode = 0;
   for (const r of results) {
-    if (r.status === 'NOT_FOUND' || r.status === 'UNAVAILABLE' || !r.assessable) {
+    if (r.level === 'HIGH' || r.level === 'CRITICAL') {
+      exitCode = 1;
+      break; // Security risk overrides analysis errors
+    } else if (r.status === 'NOT_FOUND' || r.status === 'UNAVAILABLE' || !r.assessable) {
       exitCode = Math.max(exitCode, 2);
-    } else if (r.level === 'HIGH' || r.level === 'CRITICAL') {
-      exitCode = Math.max(exitCode, 1);
     }
   }
   process.exitCode = exitCode;

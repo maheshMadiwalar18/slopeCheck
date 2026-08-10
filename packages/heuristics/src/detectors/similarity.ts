@@ -6,14 +6,24 @@ import { getPopularPackages } from '@slopcheck/datasets';
 export class SimilarityDetector implements DetectorPlugin {
   name = 'SimilarityDetector';
 
+  private normalize(name: string): string {
+    // Strip scope (e.g., @evil/react -> react)
+    const withoutScope = name.includes('/') ? name.split('/').pop()! : name;
+    // Normalize Unicode (canonical decomposition) and convert to lowercase
+    return withoutScope.normalize('NFKD').toLowerCase().replace(/[^a-z0-9-.]/g, '');
+  }
+
   async analyze(context: PackageContext): Promise<Result<RiskFactor[], Error>> {
     try {
       const popularPackages = await getPopularPackages();
 
       if (popularPackages.includes(context.name)) return ok([]);
 
+      const normalizedContextName = this.normalize(context.name);
+
       for (const popular of popularPackages) {
-        const dist = distance(context.name, popular);
+        const normalizedPopular = this.normalize(popular);
+        const dist = distance(normalizedContextName, normalizedPopular);
 
         // If it's a 1-character typo of a massively popular package
         if (dist === 1) {
@@ -26,7 +36,7 @@ export class SimilarityDetector implements DetectorPlugin {
         }
         
         // 2-character typo
-        if (dist === 2 && context.name.length > 5) {
+        if (dist === 2 && normalizedContextName.length > 5) {
            return ok([{
             name: this.name,
             description: `Package name '${context.name}' is similar to popular package '${popular}' (Levenshtein distance 2)`,
@@ -42,3 +52,4 @@ export class SimilarityDetector implements DetectorPlugin {
     }
   }
 }
+

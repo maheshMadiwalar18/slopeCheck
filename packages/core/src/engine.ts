@@ -38,12 +38,25 @@ export class RiskEngine {
       }
     }
 
-    const finalScore = totalWeight > 0 ? Math.min(Math.round(totalWeightedScore / totalWeight), 100) : 0;
-
+    let finalScore = totalWeight > 0 ? Math.min(Math.round(totalWeightedScore / totalWeight), 100) : 0;
     let level: RiskLevel = 'SAFE';
-    if (finalScore >= 80) level = 'CRITICAL';
-    else if (finalScore >= 60) level = 'HIGH';
-    else if (finalScore >= 30) level = 'SUSPICIOUS';
+
+    // Fail-Closed: If we have zero weight (no factors scored) but the assessment had errors
+    // (e.g., UNAVAILABLE metadata), we must NOT consider the package SAFE.
+    if (totalWeight === 0 && (status === 'UNAVAILABLE' || errors.length > 0)) {
+      finalScore = 100;
+      level = 'CRITICAL';
+      factors.push({
+        name: 'MissingDataFallback',
+        description: 'Crucial security data could not be retrieved. Assuming maximum risk.',
+        score: 100,
+        weight: 1.0,
+      });
+    } else {
+      if (finalScore >= 80) level = 'CRITICAL';
+      else if (finalScore >= 60) level = 'HIGH';
+      else if (finalScore >= 30) level = 'SUSPICIOUS';
+    }
 
     return {
       package: context.name,

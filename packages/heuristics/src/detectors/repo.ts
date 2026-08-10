@@ -27,9 +27,15 @@ export class RepoDetector implements DetectorPlugin {
           }]);
         }
       } else {
-        // We tried to fetch GitHub but got nothing, meaning the repo might be invalid or not on GitHub
-        // For this basic detector, we won't penalize heavily unless we know it's a 404, but we don't have the explicit HTTP status here.
-        // We will rely on MetadataDetector for missing repo.
+        const repoUrl = typeof context.npm.repository === 'string' ? context.npm.repository : context.npm.repository.url;
+        if (repoUrl && repoUrl.includes('github.com')) {
+           return ok([{
+             name: this.name,
+             description: `The linked GitHub repository is missing or inaccessible.`,
+             score: 95,
+             weight: 2.0,
+           }]);
+        }
       }
 
       return ok([]);

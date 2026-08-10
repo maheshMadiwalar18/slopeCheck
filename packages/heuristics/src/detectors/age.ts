@@ -12,7 +12,7 @@ export class AgeDetector implements DetectorPlugin {
 
       const createdTime = new Date(context.npm.time.created).getTime();
       const now = Date.now();
-      const daysOld = (now - createdTime) / (1000 * 60 * 60 * 24);
+      const daysOld = Math.max(0, (now - createdTime) / (1000 * 60 * 60 * 24));
 
       let score = 0;
       if (daysOld < 1) score = 100;

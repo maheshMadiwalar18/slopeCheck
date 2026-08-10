@@ -32,4 +32,17 @@ describe('RiskEngine', () => {
     expect(result.level).toBe('HIGH');
     expect(result.factors.length).toBe(2);
   });
+
+  it('should fail-closed and return CRITICAL when totalWeight is 0 and status is UNAVAILABLE', async () => {
+    const registry = new PluginRegistry();
+    const engine = new RiskEngine(registry);
+    const ctx: PackageContext = { name: 'test-pkg' };
+    
+    const result = await engine.evaluate(ctx, 'UNAVAILABLE', [{source: 'npm', code: 'TEST', message: 'test'}]);
+    
+    expect(result.score).toBe(100);
+    expect(result.level).toBe('CRITICAL');
+    expect(result.factors.length).toBe(1);
+    expect(result.factors[0]?.name).toBe('MissingDataFallback');
+  });
 });

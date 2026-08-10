@@ -5,7 +5,21 @@ export interface CheckOptions {
   json?: boolean;
 }
 
+export function isValidPackageName(name: string): boolean {
+  return /^(?:@[a-z0-9-*~][a-z0-9-*._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/.test(name);
+}
+
 export async function checkCommand(packageName: string, options: CheckOptions = {}) {
+  if (!isValidPackageName(packageName)) {
+    if (options.json) {
+      console.log(JSON.stringify({ error: `Invalid package name format: ${packageName}` }, null, 2));
+    } else {
+      console.error(pc.red(`❌ Invalid package name format: ${packageName}`));
+    }
+    process.exitCode = 2;
+    return;
+  }
+
   const result = await evaluatePackage(packageName);
 
   if (options.json) {

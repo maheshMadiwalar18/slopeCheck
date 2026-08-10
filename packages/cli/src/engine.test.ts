@@ -70,9 +70,9 @@ describe('CLI Engine - evaluatePackage', () => {
     const result = await evaluatePackage('some-pkg');
     
     expect(result.status).toBe('UNAVAILABLE');
-    expect(result.assessable).toBe(false);
-    expect(result.score).toBeNull();
-    expect(result.level).toBe('UNKNOWN');
+    expect(result.assessable).toBe(true);
+    expect(result.score).toBe(100);
+    expect(result.level).toBe('CRITICAL');
     expect(result.errors.length).toBe(1);
     expect(result.errors[0]?.code).toBe('REGISTRY_ERROR');
   });
@@ -87,8 +87,9 @@ describe('CLI Engine - evaluatePackage', () => {
     const result = await evaluatePackage('some-pkg');
     
     expect(result.status).toBe('UNAVAILABLE');
-    expect(result.assessable).toBe(false);
-    expect(result.score).toBeNull();
+    expect(result.assessable).toBe(true);
+    expect(result.score).toBe(100);
+    expect(result.level).toBe('CRITICAL');
     expect(result.errors.length).toBe(1);
   });
 

@@ -11,6 +11,18 @@ export class PopularityDetector implements DetectorPlugin {
       const dl = context.downloads.downloads;
       let score = 0;
 
+      if (dl >= 5000) {
+        if (!context.github || context.github.stargazers_count < 10) {
+          return ok([{
+            name: this.name,
+            description: `Package has unusually high downloads (${dl}) but missing or low-star GitHub repository. Possible bot inflation.`,
+            score: 85,
+            weight: 2.0,
+          }]);
+        }
+        return ok([]);
+      }
+
       if (dl === 0) score = 100;
       else if (dl < 50) score = 80;
       else if (dl < 500) score = 50;

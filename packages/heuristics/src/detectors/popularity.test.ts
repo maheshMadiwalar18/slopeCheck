@@ -52,12 +52,34 @@ describe('PopularityDetector', () => {
   });
 
   it('should pass a popular package with high downloads', async () => {
-    const ctx: PackageContext = { name: 'test-pkg', downloads: makeDl(100_000) };
+    const ctx: PackageContext = { 
+      name: 'test-pkg', 
+      downloads: makeDl(100_000),
+      github: {
+        full_name: 'fake/test-pkg',
+        stargazers_count: 5000,
+        forks_count: 100,
+        created_at: '2020-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+        pushed_at: '2024-01-01T00:00:00Z'
+      }
+    };
     const result = await detector.analyze(ctx);
 
     expect(isSuccess(result)).toBe(true);
     if (isSuccess(result)) {
       expect(result.value.length).toBe(0);
+    }
+  });
+
+  it('should flag a package with high downloads but missing GitHub repo (bot inflation)', async () => {
+    const ctx: PackageContext = { name: 'test-pkg', downloads: makeDl(100_000) };
+    const result = await detector.analyze(ctx);
+
+    expect(isSuccess(result)).toBe(true);
+    if (isSuccess(result)) {
+      expect(result.value.length).toBe(1);
+      expect(result.value[0]!.score).toBe(85);
     }
   });
 
