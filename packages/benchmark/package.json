@@ -8,6 +8,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "start": "node dist/index.mjs",
+    "start:live": "node dist/index.mjs --live",
     "build": "tsup src/index.ts --format cjs,esm --dts",
     "lint": "eslint src/",
     "typecheck": "tsc --noEmit"

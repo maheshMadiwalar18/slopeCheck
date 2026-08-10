@@ -1,43 +1,27 @@
 import pc from 'picocolors';
-import { corpus } from './corpus';
+import { liveCorpus, deterministicCorpus } from './corpus';
 import { runBenchmark } from './runner';
-import { calculateMetrics, type ConfusionMatrix } from './metrics';
+import { calculateMetrics } from './metrics';
 
 async function main() {
   const isJson = process.argv.includes('--json');
+  const isLive = process.argv.includes('--live');
+  const mode = isLive ? 'live' : 'deterministic';
+  const targetCorpus = isLive ? liveCorpus : deterministicCorpus;
 
   if (!isJson) {
-    console.log(pc.cyan('\n🚀 Starting Slopcheck Benchmark Harness...'));
-    console.log(pc.gray(`Evaluating ${corpus.length} test cases\n`));
+    console.log(pc.cyan(`\n🚀 Starting Slopcheck Benchmark Harness (${mode} mode)...`));
+    console.log(pc.gray(`Evaluating ${targetCorpus.length} test cases\n`));
   }
 
-  const { results, metrics } = await runBenchmark(corpus);
-
-  // Compute metrics
-  const matrix: ConfusionMatrix = { tp: 0, fp: 0, fn: 0, tn: 0 };
-  const failures: any[] = [];
-
-  for (const res of results) {
-    const isExpectedSafe = res.expectedBehavior === 'SAFE';
-    const isActualSafe = res.actualLevel === 'SAFE';
-
-    if (isExpectedSafe && isActualSafe) matrix.tn++;
-    else if (isExpectedSafe && !isActualSafe) matrix.fp++;
-    else if (!isExpectedSafe && !isActualSafe) matrix.tp++;
-    else if (!isExpectedSafe && isActualSafe) matrix.fn++;
-
-    if (!res.isMatch) {
-      failures.push(res);
-    }
-  }
-
-  const scores = calculateMetrics(matrix);
+  const { results, metrics: perfMetrics } = await runBenchmark(targetCorpus, mode);
+  const metrics = calculateMetrics(results);
+  const failures = results.filter(r => !r.isMatch);
 
   if (isJson) {
     console.log(JSON.stringify({
+      performance: perfMetrics,
       metrics,
-      confusionMatrix: matrix,
-      scores,
       results,
     }, null, 2));
     return;
@@ -46,25 +30,32 @@ async function main() {
   console.log(pc.bold('📊 Benchmark Results'));
   console.log('────────────────────────────────────────');
   
-  // Format the metrics nicely
-  console.log(`True Positives (TP):  ${pc.green(matrix.tp)}`);
-  console.log(`True Negatives (TN):  ${pc.green(matrix.tn)}`);
-  console.log(`False Positives (FP): ${matrix.fp > 0 ? pc.red(matrix.fp) : pc.green(matrix.fp)}`);
-  console.log(`False Negatives (FN): ${matrix.fn > 0 ? pc.red(matrix.fn) : pc.green(matrix.fn)}`);
+  console.log(pc.bold('\nDetection Accuracy (Is it suspicious?)'));
+  console.log(`True Positives (TP):  ${pc.green(metrics.detection.tp)}`);
+  console.log(`True Negatives (TN):  ${pc.green(metrics.detection.tn)}`);
+  console.log(`False Positives (FP): ${metrics.detection.fp > 0 ? pc.red(metrics.detection.fp) : pc.green(metrics.detection.fp)}`);
+  console.log(`False Negatives (FN): ${metrics.detection.fn > 0 ? pc.red(metrics.detection.fn) : pc.green(metrics.detection.fn)}`);
+  console.log(`Precision: ${pc.cyan((metrics.detection.precision * 100).toFixed(1) + '%')}`);
+  console.log(`Recall:    ${pc.cyan((metrics.detection.recall * 100).toFixed(1) + '%')}`);
+  console.log(`F1 Score:  ${pc.cyan((metrics.detection.f1 * 100).toFixed(1) + '%')}`);
   
-  console.log('\n');
-  console.log(`Precision: ${pc.cyan((scores.precision * 100).toFixed(1) + '%')}`);
-  console.log(`Recall:    ${pc.cyan((scores.recall * 100).toFixed(1) + '%')}`);
-  console.log(`F1 Score:  ${pc.cyan((scores.f1 * 100).toFixed(1) + '%')}`);
-  console.log(`Accuracy:  ${pc.cyan((scores.accuracy * 100).toFixed(1) + '%')}`);
+  console.log(pc.bold('\nSafety Accuracy (Are legitimate packages safe?)'));
+  console.log(`Precision: ${pc.cyan((metrics.safe.precision * 100).toFixed(1) + '%')}`);
+  console.log(`Recall:    ${pc.cyan((metrics.safe.recall * 100).toFixed(1) + '%')}`);
+
+  console.log(pc.bold('\nSeverity Accuracy (For True Positives)'));
+  const totalTp = metrics.detection.tp;
+  console.log(`Exact Match:      ${pc.green(metrics.severity.exactMatch)} ${totalTp ? `(${((metrics.severity.exactMatch / totalTp) * 100).toFixed(1)}%)` : ''}`);
+  console.log(`Over-Escalation:  ${pc.yellow(metrics.severity.overEscalation)} ${totalTp ? `(${((metrics.severity.overEscalation / totalTp) * 100).toFixed(1)}%)` : ''}`);
+  console.log(`Under-Escalation: ${pc.red(metrics.severity.underEscalation)} ${totalTp ? `(${((metrics.severity.underEscalation / totalTp) * 100).toFixed(1)}%)` : ''}`);
   
   console.log('\n' + pc.bold('⏱️ Performance Metrics'));
   console.log('────────────────────────────────────────');
-  console.log(`Total Duration:   ${pc.yellow((metrics.durationMs).toFixed(0) + 'ms')} (avg ${(metrics.durationMs / corpus.length).toFixed(1)}ms/pkg)`);
-  console.log(`Registry API:     ${pc.yellow(metrics.registryRequests)} requests`);
-  console.log(`GitHub API:       ${pc.yellow(metrics.githubRequests)} requests`);
-  console.log(`Cache Hits:       ${pc.green(metrics.cacheHits)}`);
-  console.log(`Cache Misses:     ${pc.yellow(metrics.cacheMisses)}`);
+  console.log(`Total Duration:   ${pc.yellow((perfMetrics.durationMs).toFixed(0) + 'ms')} (avg ${(perfMetrics.durationMs / targetCorpus.length).toFixed(1)}ms/pkg)`);
+  console.log(`Registry API:     ${pc.yellow(perfMetrics.registryRequests)} requests`);
+  console.log(`GitHub API:       ${pc.yellow(perfMetrics.githubRequests)} requests`);
+  console.log(`Cache Hits:       ${pc.green(perfMetrics.cacheHits)}`);
+  console.log(`Cache Misses:     ${pc.yellow(perfMetrics.cacheMisses)}`);
 
   if (failures.length > 0) {
     console.log('\n' + pc.bold(pc.red('❌ Failing Test Cases')));

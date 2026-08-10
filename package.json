@@ -5,6 +5,7 @@
     "build": "pnpm -r run build",
     "test": "pnpm -r run test",
     "benchmark": "pnpm -F @slopcheck/benchmark start",
+    "benchmark:live": "pnpm -F @slopcheck/benchmark start:live",
     "lint": "pnpm -r run lint",
     "typecheck": "pnpm -r run typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,md,json,yaml}\"",

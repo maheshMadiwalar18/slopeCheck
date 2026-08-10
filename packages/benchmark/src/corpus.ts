@@ -25,7 +25,7 @@ export interface TestCase {
   readonly rationale: string;
 }
 
-export const corpus: readonly TestCase[] = [
+export const liveCorpus: readonly TestCase[] = [
   // Legitimate Popular
   { package: 'react', category: 'legitimate-popular', expectedBehavior: 'SAFE', source: 'npm', sourceType: 'npm', rationale: 'Established package with long publication history and high download volume.' },
   { package: 'express', category: 'legitimate-popular', expectedBehavior: 'SAFE', source: 'npm', sourceType: 'npm', rationale: 'Established package with long publication history and high download volume.' },
@@ -63,4 +63,11 @@ export const corpus: readonly TestCase[] = [
   // Legitimate Scoped
   { package: '@angular/core', category: 'legitimate-scoped', expectedBehavior: 'SAFE', source: 'npm', sourceType: 'npm', rationale: 'Established package with long publication history and high download volume.' },
   { package: '@babel/core', category: 'legitimate-scoped', expectedBehavior: 'SAFE', source: 'npm', sourceType: 'npm', rationale: 'Established package with long publication history and high download volume.' },
+];
+
+export const deterministicCorpus: readonly TestCase[] = [
+  { package: 'react', category: 'legitimate-popular', expectedBehavior: 'SAFE', source: 'npm', sourceType: 'npm', rationale: 'Established package with long publication history and high download volume.' },
+  { package: 'reactt', category: 'typosquat', expectedBehavior: 'HIGH', expectedMinSeverity: 'strong', source: 'generated', sourceType: 'generated', rationale: 'Generated typosquat of react.' },
+  { package: 'react-codeshift', category: 'hallucination', expectedBehavior: 'CRITICAL', expectedMinSeverity: 'hard', source: 'official-hallucination-dataset', sourceType: 'dataset', rationale: 'Listed in the project\'s versioned hallucination corpus.' },
+  { package: '@angular/core', category: 'legitimate-scoped', expectedBehavior: 'SAFE', source: 'npm', sourceType: 'npm', rationale: 'Established package with long publication history and high download volume.' },
 ];
