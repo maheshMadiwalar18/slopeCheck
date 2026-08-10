@@ -63,10 +63,13 @@ export async function getHallucinationMap(): Promise<ReadonlyMap<string, Halluci
   ]);
 
   const map = new Map<string, HallucinationRecord>();
-  for (const record of official) map.set(record.package, record);
+  for (const record of official) {
+    map.set(record.package.toLowerCase(), record);
+  }
   for (const record of community) {
-    if (!map.has(record.package)) {
-      map.set(record.package, record);
+    const key = record.package.toLowerCase();
+    if (!map.has(key)) {
+      map.set(key, record);
     }
   }
 

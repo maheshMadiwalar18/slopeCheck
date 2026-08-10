@@ -8,9 +8,9 @@ export class HallucinationDetector implements DetectorPlugin {
   async analyze(context: PackageContext): Promise<Result<RiskFactor[], Error>> {
     try {
       const map = await getHallucinationMap();
-      const exactRecord = map.get(context.name);
+      const exactRecord = map.get(context.name.toLowerCase());
 
-      if (exactRecord) {
+      if (exactRecord && exactRecord.package === context.name) {
         return ok([{
           name: this.name,
           description: `EXACT_HALLUCINATION_MATCH: Package is explicitly on the AI hallucination list (Source: ${exactRecord.source})`,
