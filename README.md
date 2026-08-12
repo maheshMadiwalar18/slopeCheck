@@ -29,7 +29,7 @@ Slopcheck Agent is a proactive security tool that analyzes package risk **before
 
 **Current Detection Capabilities:**
 * **Package Age**: Flags newly published packages with no established history.
-* **Download Activity**: Identifies unusually low download volume or artificial inflation.
+* **Download Activity**: Evaluates package download activity as a risk signal.
 * **Repository Metadata**: Verifies the presence and quality of source code repository links.
 * **Metadata Quality**: Checks for missing descriptions, readmes, or suspicious maintainer information.
 * **Hallucination Datasets**: Cross-references against official and community datasets of known hallucinated package names.
@@ -171,7 +171,7 @@ flowchart TD
 
 ## Detection Pipeline
 
-The security pipeline operates in a sequential, explainable manner:
+The security pipeline is modular, concurrent, and explainable.
 
 ```text
 Package Name

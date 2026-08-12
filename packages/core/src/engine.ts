@@ -22,7 +22,7 @@ export class RiskEngine {
         const result = await plugin.analyze(context);
         if (isSuccess(result)) {
           for (const factor of result.value) {
-            if (factor.score > 0) {
+            if (factor.score !== 0) {
               const contribution = factor.score * factor.weight;
               factors.push(factor);
               contributions.push({
@@ -82,7 +82,7 @@ export class RiskEngine {
       };
     }
 
-    let heuristicAverage = totalWeight > 0 ? Math.round(totalWeightedScore / totalWeight) : 0;
+    let heuristicAverage = totalWeight > 0 ? Math.max(0, Math.round(totalWeightedScore / totalWeight)) : 0;
     let finalScore: number | null = totalWeight > 0 ? Math.min(heuristicAverage, 100) : 0;
     let level: RiskLevel = 'SAFE';
 

@@ -18,5 +18,30 @@
     "package": "axios-fetcher",
     "source": "ChatGPT hallucination",
     "date_added": "2024-04-01"
+  },
+  {
+    "package": "unused-imports",
+    "source": "ChatGPT hallucination",
+    "date_added": "2024-04-01"
+  },
+  {
+    "package": "huggingface-cli",
+    "source": "ChatGPT hallucination",
+    "date_added": "2024-04-01"
+  },
+  {
+    "package": "openai-auth-middleware",
+    "source": "dataset",
+    "date_added": "2024-04-01"
+  },
+  {
+    "package": "stripe-fake-webhooks",
+    "source": "dataset",
+    "date_added": "2024-04-01"
+  },
+  {
+    "package": "react-dom-server-render-to-stream",
+    "source": "dataset",
+    "date_added": "2024-04-01"
   }
 ]

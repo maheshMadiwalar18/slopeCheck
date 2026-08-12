@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { RepoDetector } from './repo';
-import type { PackageContext, NpmMetadata, GithubInfo } from '@slopcheck/core';
+import type { PackageContext, NpmPackageMetadata, GithubInfo } from '@slopcheck/core';
 import { isSuccess } from '@slopcheck/core';
 
-const baseNpm: NpmMetadata = {
+const baseNpm: NpmPackageMetadata = {
   name: 'test-pkg',
   time: { created: '2020-01-01T00:00:00.000Z' },
 };

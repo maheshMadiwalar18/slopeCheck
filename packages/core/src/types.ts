@@ -33,15 +33,13 @@ export interface RiskFactor {
 /**
  * Minimal npm package metadata needed for risk analysis.
  */
-export interface NpmMetadata {
+export interface NpmPackageMetadata {
   readonly name: string;
   readonly description?: string | undefined;
-  readonly readme?: string | undefined;
   readonly time: Readonly<Record<string, string>>;
-  readonly maintainers?: readonly { readonly name: string; readonly email?: string | undefined }[] | undefined;
+  readonly maintainers?: ReadonlyArray<{ readonly name: string; readonly email?: string | undefined }> | undefined;
   readonly repository?: string | { readonly type?: string | undefined; readonly url: string } | undefined;
   readonly homepage?: string | undefined;
-  readonly versions?: Readonly<Record<string, unknown>> | undefined;
 }
 
 /**
@@ -75,7 +73,7 @@ export interface GithubInfo {
 export interface PackageContext {
   readonly name: string;
   readonly version?: string | undefined;
-  npm?: NpmMetadata | null | undefined;
+  npm?: NpmPackageMetadata | null | undefined;
   downloads?: DownloadStats | null | undefined;
   github?: GithubInfo | null | undefined;
 }

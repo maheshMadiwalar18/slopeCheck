@@ -1,32 +1,37 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { evaluatePackage } from './engine';
-import { fetchNpmMetadata, fetchNpmDownloads, fetchGithubMetadata } from '@slopcheck/registry';
+import { evaluatePackage, setRegistryClient } from './engine';
+import { RegistryClient } from '@slopcheck/registry';
 import { ok, fail } from '@slopcheck/core';
 
-vi.mock('@slopcheck/registry', () => ({
-  fetchNpmMetadata: vi.fn(),
-  fetchNpmDownloads: vi.fn(),
-  fetchGithubMetadata: vi.fn(),
-}));
+const mockFetchNpmMetadata = vi.fn();
+const mockFetchNpmDownloads = vi.fn();
+const mockFetchGithubMetadata = vi.fn();
+
+const mockClient = {
+  fetchNpmMetadata: mockFetchNpmMetadata,
+  fetchNpmDownloads: mockFetchNpmDownloads,
+  fetchGithubMetadata: mockFetchGithubMetadata,
+} as unknown as RegistryClient;
 
 describe('CLI Engine - evaluatePackage', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    setRegistryClient(mockClient);
   });
 
   it('should handle a successful package', async () => {
-    vi.mocked(fetchNpmMetadata).mockResolvedValue(ok({
+    mockFetchNpmMetadata.mockResolvedValue(ok({
       name: 'express',
       time: { created: '2010-01-01' },
       repository: 'https://github.com/expressjs/express',
     }));
-    vi.mocked(fetchNpmDownloads).mockResolvedValue(ok({
+    mockFetchNpmDownloads.mockResolvedValue(ok({
       package: 'express',
       downloads: 1000000,
       start: '2024-01-01',
       end: '2024-01-07',
     }));
-    vi.mocked(fetchGithubMetadata).mockResolvedValue(ok({
+    mockFetchGithubMetadata.mockResolvedValue(ok({
       full_name: 'expressjs/express',
       stargazers_count: 50000,
       forks_count: 10000,
@@ -45,7 +50,7 @@ describe('CLI Engine - evaluatePackage', () => {
   });
 
   it('should return NOT_FOUND for npm 404', async () => {
-    vi.mocked(fetchNpmMetadata).mockResolvedValue(fail({
+    mockFetchNpmMetadata.mockResolvedValue(fail({
       name: 'RegistryError',
       message: 'Package not found',
       status: 404,
@@ -62,7 +67,7 @@ describe('CLI Engine - evaluatePackage', () => {
   });
 
   it('should return UNAVAILABLE for npm timeout or network failure', async () => {
-    vi.mocked(fetchNpmMetadata).mockResolvedValue(fail({
+    mockFetchNpmMetadata.mockResolvedValue(fail({
       name: 'RegistryError',
       message: 'Request timed out',
     } as any));
@@ -78,7 +83,7 @@ describe('CLI Engine - evaluatePackage', () => {
   });
 
   it('should return UNAVAILABLE for npm 429 rate limit', async () => {
-    vi.mocked(fetchNpmMetadata).mockResolvedValue(fail({
+    mockFetchNpmMetadata.mockResolvedValue(fail({
       name: 'RegistryError',
       message: 'Rate limited',
       status: 429,
@@ -94,11 +99,11 @@ describe('CLI Engine - evaluatePackage', () => {
   });
 
   it('should return PARTIAL for downloads failure', async () => {
-    vi.mocked(fetchNpmMetadata).mockResolvedValue(ok({
+    mockFetchNpmMetadata.mockResolvedValue(ok({
       name: 'express',
       time: { created: '2010-01-01' },
     }));
-    vi.mocked(fetchNpmDownloads).mockResolvedValue(fail({
+    mockFetchNpmDownloads.mockResolvedValue(fail({
       name: 'RegistryError',
       message: 'Downloads failed',
     } as any));
@@ -113,18 +118,18 @@ describe('CLI Engine - evaluatePackage', () => {
   });
 
   it('should return PARTIAL for GitHub failure', async () => {
-    vi.mocked(fetchNpmMetadata).mockResolvedValue(ok({
+    mockFetchNpmMetadata.mockResolvedValue(ok({
       name: 'express',
       time: { created: '2010-01-01' },
       repository: 'https://github.com/expressjs/express',
     }));
-    vi.mocked(fetchNpmDownloads).mockResolvedValue(ok({
+    mockFetchNpmDownloads.mockResolvedValue(ok({
       package: 'express',
       downloads: 1000000,
       start: '2024-01-01',
       end: '2024-01-07',
     }));
-    vi.mocked(fetchGithubMetadata).mockResolvedValue(fail({
+    mockFetchGithubMetadata.mockResolvedValue(fail({
       name: 'RegistryError',
       message: 'Rate limited by GitHub',
       status: 403,

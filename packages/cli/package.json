@@ -1,20 +1,27 @@
 {
   "name": "slopcheck-agent",
   "version": "0.1.0",
+  "description": "Slopcheck: Security analysis and risk scoring for npm packages.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voodoowrez/slopcheck.git"
+  },
+  "homepage": "https://github.com/voodoowrez/slopcheck#readme",
+  "files": [
+    "dist",
+    "data"
+  ],
   "bin": {
-    "slopcheck-agent": "./dist/index.js"
+    "slopcheck-agent": "./dist/index.mjs"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "build": "tsup src/index.ts --format cjs,esm --dts && node -e \"require('fs').cpSync('../datasets/data', './data', {recursive: true})\"",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/",
     "test": "vitest run"
   },
   "dependencies": {
-    "@slopcheck/core": "workspace:*",
-    "@slopcheck/datasets": "workspace:*",
-    "@slopcheck/heuristics": "workspace:*",
-    "@slopcheck/registry": "workspace:*",
     "cac": "^6.7.14",
     "cli-progress": "^3.12.0",
     "p-limit": "^7.3.1",
@@ -23,11 +30,15 @@
   },
   "devDependencies": {
     "@slopcheck/config": "workspace:*",
+    "@slopcheck/core": "workspace:*",
+    "@slopcheck/datasets": "workspace:*",
+    "@slopcheck/heuristics": "workspace:*",
+    "@slopcheck/registry": "workspace:*",
     "@types/cli-progress": "^3.11.6",
     "tsup": "^8.0.2",
     "typescript": "^5.4.5"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.0.0"
   }
 }

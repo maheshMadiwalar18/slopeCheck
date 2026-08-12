@@ -1,13 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { MetadataDetector } from './metadata';
-import type { PackageContext, NpmMetadata } from '@slopcheck/core';
+import type { PackageContext, NpmPackageMetadata } from '@slopcheck/core';
 import { isSuccess } from '@slopcheck/core';
 
-function makeNpm(overrides: Partial<NpmMetadata> = {}): NpmMetadata {
+function makeNpm(overrides: Partial<NpmPackageMetadata> = {}): NpmPackageMetadata {
   return {
     name: 'test-pkg',
     description: 'A valid package description here',
-    readme: 'A'.repeat(100), // at least 50 chars
     time: { created: '2020-01-01T00:00:00.000Z' },
     maintainers: [{ name: 'author' }],
     repository: { url: 'https://github.com/test/test' },
@@ -49,7 +48,7 @@ describe('MetadataDetector', () => {
     expect(isSuccess(result)).toBe(true);
     if (isSuccess(result)) {
       expect(result.value.length).toBe(1);
-      expect(result.value[0]!.score).toBe(20); // 1 missing field * 20
+      expect(result.value[0]!.score).toBe(25); // 1 missing field * 25
     }
   });
 
@@ -62,7 +61,7 @@ describe('MetadataDetector', () => {
 
     expect(isSuccess(result)).toBe(true);
     if (isSuccess(result)) {
-      expect(result.value[0]!.score).toBe(20);
+      expect(result.value[0]!.score).toBe(25);
     }
   });
 
@@ -71,7 +70,6 @@ describe('MetadataDetector', () => {
       name: 'test-pkg',
       npm: makeNpm({
         description: undefined,
-        readme: undefined,
         repository: undefined,
         homepage: undefined,
         maintainers: [],
@@ -81,7 +79,7 @@ describe('MetadataDetector', () => {
 
     expect(isSuccess(result)).toBe(true);
     if (isSuccess(result)) {
-      expect(result.value[0]!.score).toBe(100); // 5 missing * 20
+      expect(result.value[0]!.score).toBe(100); // 4 missing * 25
     }
   });
 });

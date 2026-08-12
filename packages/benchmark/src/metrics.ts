@@ -19,6 +19,7 @@ export interface BenchmarkMetrics {
     precision: number;
     recall: number;
   };
+  confusionMatrix: Record<string, Record<string, number>>;
 }
 
 const SEVERITY_RANK = {
@@ -35,6 +36,14 @@ const SEVERITY_RANK = {
 export function calculateMetrics(results: EvaluationResult[]): BenchmarkMetrics {
   let tp = 0, fp = 0, fn = 0, tn = 0;
   let exactMatch = 0, overEscalation = 0, underEscalation = 0;
+
+  const confusionMatrix: Record<string, Record<string, number>> = {
+    'SAFE': { 'SAFE': 0, 'SUSPICIOUS': 0, 'HIGH': 0, 'CRITICAL': 0, 'OTHER': 0 },
+    'SUSPICIOUS': { 'SAFE': 0, 'SUSPICIOUS': 0, 'HIGH': 0, 'CRITICAL': 0, 'OTHER': 0 },
+    'HIGH': { 'SAFE': 0, 'SUSPICIOUS': 0, 'HIGH': 0, 'CRITICAL': 0, 'OTHER': 0 },
+    'CRITICAL': { 'SAFE': 0, 'SUSPICIOUS': 0, 'HIGH': 0, 'CRITICAL': 0, 'OTHER': 0 },
+    'OTHER': { 'SAFE': 0, 'SUSPICIOUS': 0, 'HIGH': 0, 'CRITICAL': 0, 'OTHER': 0 },
+  };
 
   for (const res of results) {
     const isExpectedSafe = res.expectedBehavior === 'SAFE' || res.expectedBehavior === 'UNSUPPORTED';
@@ -58,6 +67,11 @@ export function calculateMetrics(results: EvaluationResult[]): BenchmarkMetrics 
         underEscalation++;
       }
     }
+
+    // Update Confusion Matrix
+    const expectedKey = ['SAFE', 'SUSPICIOUS', 'HIGH', 'CRITICAL'].includes(res.expectedBehavior) ? res.expectedBehavior : 'OTHER';
+    const actualKey = ['SAFE', 'SUSPICIOUS', 'HIGH', 'CRITICAL'].includes(res.actualLevel) ? res.actualLevel : 'OTHER';
+    confusionMatrix[expectedKey]![actualKey] = (confusionMatrix[expectedKey]![actualKey] ?? 0) + 1;
   }
 
   const calcPrecision = (truePos: number, falsePos: number) => truePos + falsePos === 0 ? 0 : truePos / (truePos + falsePos);
@@ -86,6 +100,7 @@ export function calculateMetrics(results: EvaluationResult[]): BenchmarkMetrics 
     safe: {
       precision: safePrecision,
       recall: safeRecall,
-    }
+    },
+    confusionMatrix
   };
 }

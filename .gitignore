@@ -3,3 +3,18 @@ dist/
 .env
 coverage/
 *.log
+
+# Test artifacts
+test-install/
+test-install2/
+cli_*.txt
+benchmark_*.txt
+packages/benchmark/fixtures/
+packages/benchmark/src/*.bak
+
+# CLI datasets
+packages/cli/data/
+packages/cli/*.tgz
+
+# Dataset corpora
+packages/datasets/corpus/

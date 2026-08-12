@@ -49,6 +49,24 @@ async function main() {
   console.log(`Over-Escalation:  ${pc.yellow(metrics.severity.overEscalation)} ${totalTp ? `(${((metrics.severity.overEscalation / totalTp) * 100).toFixed(1)}%)` : ''}`);
   console.log(`Under-Escalation: ${pc.red(metrics.severity.underEscalation)} ${totalTp ? `(${((metrics.severity.underEscalation / totalTp) * 100).toFixed(1)}%)` : ''}`);
   
+  console.log(pc.bold('\nSeverity Confusion Matrix'));
+  console.log('                 ACTUAL');
+  console.log('             SAFE SUSP HIGH CRIT');
+  console.log('EXPECTED');
+  
+  const labels = ['SAFE', 'SUSPICIOUS', 'HIGH', 'CRITICAL'];
+  const shortLabels = ['SAFE', 'SUSP', 'HIGH', 'CRIT'];
+  for (let i = 0; i < labels.length; i++) {
+    const rowLabel = (shortLabels[i] as string).padEnd(12, ' ');
+    const expected = labels[i] as string;
+    const safeCount = (metrics.confusionMatrix[expected]?.['SAFE'] ?? 0).toString().padStart(4, ' ');
+    const suspCount = (metrics.confusionMatrix[expected]?.['SUSPICIOUS'] ?? 0).toString().padStart(4, ' ');
+    const highCount = (metrics.confusionMatrix[expected]?.['HIGH'] ?? 0).toString().padStart(4, ' ');
+    const critCount = (metrics.confusionMatrix[expected]?.['CRITICAL'] ?? 0).toString().padStart(4, ' ');
+    
+    console.log(`${rowLabel} ${safeCount} ${suspCount} ${highCount} ${critCount}`);
+  }
+
   console.log('\n' + pc.bold('⏱️ Performance Metrics'));
   console.log('────────────────────────────────────────');
   console.log(`Total Duration:   ${pc.yellow((perfMetrics.durationMs).toFixed(0) + 'ms')} (avg ${(perfMetrics.durationMs / targetCorpus.length).toFixed(1)}ms/pkg)`);

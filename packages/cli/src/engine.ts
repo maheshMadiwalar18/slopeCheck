@@ -1,6 +1,6 @@
 import type { PackageContext, RiskAssessment, AssessmentStatus, AssessmentError } from '@slopcheck/core';
 import { RiskEngine, PluginRegistry, isFailure } from '@slopcheck/core';
-import { fetchNpmMetadata, fetchNpmDownloads, fetchGithubMetadata } from '@slopcheck/registry';
+import { RegistryClient, RegistryError } from '@slopcheck/registry';
 import { 
   AgeDetector, 
   HallucinationDetector, 
@@ -11,6 +11,18 @@ import {
 } from '@slopcheck/heuristics';
 
 let sharedEngine: RiskEngine | null = null;
+let sharedRegistryClient: RegistryClient | null = null;
+
+export function getRegistryClient(): RegistryClient {
+  if (!sharedRegistryClient) {
+    sharedRegistryClient = new RegistryClient();
+  }
+  return sharedRegistryClient;
+}
+
+export function setRegistryClient(client: RegistryClient) {
+  sharedRegistryClient = client;
+}
 
 export function getEngine(): RiskEngine {
   if (sharedEngine) return sharedEngine;
@@ -32,7 +44,9 @@ export async function evaluatePackage(packageName: string, version?: string): Pr
   let status: AssessmentStatus = 'COMPLETE';
   const errors: AssessmentError[] = [];
 
-  const npmRes = await fetchNpmMetadata(packageName);
+  let isNotFound = false;
+  const client = getRegistryClient();
+  const npmRes = await client.fetchNpmMetadata(packageName);
   if (isFailure(npmRes)) {
     const error: AssessmentError = {
       source: 'npm',
@@ -41,23 +55,16 @@ export async function evaluatePackage(packageName: string, version?: string): Pr
     };
     
     if (npmRes.error.status === 404) {
-      return {
-        package: packageName,
-        status: 'NOT_FOUND',
-        assessable: false,
-        score: null,
-        level: 'UNKNOWN',
-        factors: [],
-        recommendations: [],
-        errors: [error],
-      };
+      isNotFound = true;
+      status = 'NOT_FOUND';
+      errors.push(error);
     } else {
       status = 'UNAVAILABLE';
       errors.push(error);
     }
   } else {
     context.npm = npmRes.value;
-    const dlRes = await fetchNpmDownloads(packageName);
+    const dlRes = await client.fetchNpmDownloads(packageName);
     if (isFailure(dlRes)) {
       status = 'PARTIAL';
       errors.push({
@@ -71,7 +78,7 @@ export async function evaluatePackage(packageName: string, version?: string): Pr
     
     if (context.npm.repository) {
       const repoUrl = typeof context.npm.repository === 'string' ? context.npm.repository : context.npm.repository.url;
-      const ghRes = await fetchGithubMetadata(repoUrl);
+      const ghRes = await client.fetchGithubMetadata(repoUrl);
       if (isFailure(ghRes)) {
         status = 'PARTIAL';
         errors.push({
@@ -86,5 +93,16 @@ export async function evaluatePackage(packageName: string, version?: string): Pr
   }
 
   const engine = getEngine();
-  return engine.evaluate(context, status, errors);
+  const res = await engine.evaluate(context, status, errors);
+  
+  if (isNotFound && res.level !== 'CRITICAL' && res.level !== 'HIGH') {
+    return {
+      ...res,
+      level: 'UNKNOWN',
+      score: null,
+      assessable: false,
+    };
+  }
+  
+  return res;
 }

@@ -10,7 +10,6 @@ export class MetadataDetector implements DetectorPlugin {
 
       let missingFields = 0;
       if (!context.npm.description || context.npm.description.length < 10) missingFields++;
-      if (!context.npm.readme || context.npm.readme.length < 50) missingFields++;
       if (!context.npm.repository) missingFields++;
       if (!context.npm.homepage) missingFields++;
       if (!context.npm.maintainers || context.npm.maintainers.length === 0) missingFields++;
@@ -19,8 +18,8 @@ export class MetadataDetector implements DetectorPlugin {
 
       return ok([{
         name: this.name,
-        description: `Package is missing ${missingFields} important metadata fields (description, readme, repo, homepage, maintainers).`,
-        score: missingFields * 20, // 20 points per missing field
+        description: `Package is missing ${missingFields} important metadata fields (description, repo, homepage, maintainers).`,
+        score: missingFields * 25, // 25 points per missing field
         weight: 0.5, // Low impact overall compared to typosquatting
       }]);
     } catch (e) {

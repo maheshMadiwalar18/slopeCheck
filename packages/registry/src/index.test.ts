@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { fetchNpmMetadata, fetchNpmDownloads, RegistryError } from './npm';
-import { fetchGithubMetadata } from './github';
+import { RegistryError } from './npm';
+import { RegistryClient } from './client';
 import { isSuccess, isFailure } from '@slopcheck/core';
 
 // We mock the global fetch to avoid real network calls
@@ -16,6 +16,11 @@ afterEach(() => {
 });
 
 describe('fetchNpmMetadata', () => {
+  let client: RegistryClient;
+  beforeEach(() => {
+    client = new RegistryClient();
+  });
+
   it('should return parsed metadata on success', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -28,7 +33,7 @@ describe('fetchNpmMetadata', () => {
       }),
     });
 
-    const result = await fetchNpmMetadata('test-pkg');
+    const result = await client.fetchNpmMetadata('test-pkg');
     expect(isSuccess(result)).toBe(true);
     if (isSuccess(result)) {
       expect(result.value.name).toBe('test-pkg');
@@ -42,7 +47,7 @@ describe('fetchNpmMetadata', () => {
       status: 404,
     });
 
-    const result = await fetchNpmMetadata('nonexistent');
+    const result = await client.fetchNpmMetadata('nonexistent');
     expect(isFailure(result)).toBe(true);
     if (isFailure(result)) {
       expect(result.error).toBeInstanceOf(RegistryError);
@@ -56,7 +61,7 @@ describe('fetchNpmMetadata', () => {
       status: 429,
     });
 
-    const result = await fetchNpmMetadata('rate-limited');
+    const result = await client.fetchNpmMetadata('rate-limited');
     expect(isFailure(result)).toBe(true);
     if (isFailure(result)) {
       expect(result.error.message).toContain('Rate limited');
@@ -65,6 +70,11 @@ describe('fetchNpmMetadata', () => {
 });
 
 describe('fetchNpmDownloads', () => {
+  let client: RegistryClient;
+  beforeEach(() => {
+    client = new RegistryClient();
+  });
+
   it('should return parsed download stats on success', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -77,7 +87,7 @@ describe('fetchNpmDownloads', () => {
       }),
     });
 
-    const result = await fetchNpmDownloads('test-pkg');
+    const result = await client.fetchNpmDownloads('test-pkg');
     expect(isSuccess(result)).toBe(true);
     if (isSuccess(result)) {
       expect(result.value.downloads).toBe(50000);
@@ -91,12 +101,17 @@ describe('fetchNpmDownloads', () => {
       status: 404,
     });
 
-    const result = await fetchNpmDownloads('nonexistent');
+    const result = await client.fetchNpmDownloads('nonexistent');
     expect(isFailure(result)).toBe(true);
   });
 });
 
 describe('fetchGithubMetadata', () => {
+  let client: RegistryClient;
+  beforeEach(() => {
+    client = new RegistryClient();
+  });
+
   it('should return parsed GitHub metadata on success', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
@@ -111,7 +126,7 @@ describe('fetchGithubMetadata', () => {
       }),
     });
 
-    const result = await fetchGithubMetadata('https://github.com/owner/repo');
+    const result = await client.fetchGithubMetadata('https://github.com/owner/repo');
     expect(isSuccess(result)).toBe(true);
     if (isSuccess(result)) {
       expect(result.value.full_name).toBe('owner/repo');
@@ -120,7 +135,7 @@ describe('fetchGithubMetadata', () => {
   });
 
   it('should return a failure for an invalid GitHub URL', async () => {
-    const result = await fetchGithubMetadata('https://not-github.com/whatever');
+    const result = await client.fetchGithubMetadata('https://not-github.com/whatever');
     expect(isFailure(result)).toBe(true);
     if (isFailure(result)) {
       expect(result.error.message).toContain('Invalid GitHub URL');
@@ -133,7 +148,7 @@ describe('fetchGithubMetadata', () => {
       status: 404,
     });
 
-    const result = await fetchGithubMetadata('https://github.com/owner/missing-repo');
+    const result = await client.fetchGithubMetadata('https://github.com/owner/missing-repo');
     expect(isFailure(result)).toBe(true);
     if (isFailure(result)) {
       expect(result.error.message).toContain('not found');
@@ -146,7 +161,7 @@ describe('fetchGithubMetadata', () => {
       status: 403,
     });
 
-    const result = await fetchGithubMetadata('https://github.com/ratelimited/repo');
+    const result = await client.fetchGithubMetadata('https://github.com/ratelimited/repo');
     expect(isFailure(result)).toBe(true);
     if (isFailure(result)) {
       expect(result.error.message).toContain('Rate limited');
