@@ -82,7 +82,7 @@ export class RiskEngine {
       };
     }
 
-    let heuristicAverage = totalWeight > 0 ? Math.max(0, Math.round(totalWeightedScore / totalWeight)) : 0;
+    const heuristicAverage = totalWeight > 0 ? Math.max(0, Math.round(totalWeightedScore / totalWeight)) : 0;
     let finalScore: number | null = totalWeight > 0 ? Math.min(heuristicAverage, 100) : 0;
     let level: RiskLevel = 'SAFE';
 

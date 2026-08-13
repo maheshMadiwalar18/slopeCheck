@@ -1,6 +1,6 @@
 import type { PackageContext, RiskAssessment, AssessmentStatus, AssessmentError } from '@slopcheck/core';
 import { RiskEngine, PluginRegistry, isFailure } from '@slopcheck/core';
-import { RegistryClient, RegistryError } from '@slopcheck/registry';
+import { RegistryClient } from '@slopcheck/registry';
 import { 
   AgeDetector, 
   HallucinationDetector, 

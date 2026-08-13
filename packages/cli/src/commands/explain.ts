@@ -25,8 +25,6 @@ export async function explainCommand(packageName: string) {
   );
   console.log(`  ${'─'.repeat(24)} ${'─'.repeat(10)} ${'─'.repeat(6)} ${'─'.repeat(7)} ${'─'.repeat(9)}`);
 
-  let totalWeightedScore = result.scoring?.totalWeightedScore ?? 0;
-  let totalWeight = result.scoring?.totalWeight ?? 0;
 
   for (const factor of result.factors) {
     const contrib = result.scoring?.contributions.find(c => c.factor === factor.name);

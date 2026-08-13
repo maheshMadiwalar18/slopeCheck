@@ -135,6 +135,7 @@ const packageFixtures: FixtureMap = {
 };
 
 class FixtureTransport implements HttpTransport {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async fetch(url: string, init?: RequestInit): Promise<Response> {
     let fixturePath = '';
 
@@ -269,6 +270,7 @@ export async function runBenchmark(corpus: readonly TestCase[], mode: 'live' | '
     results.push({
       package: testCase.package,
       expectedBehavior: testCase.expectedBehavior,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       actualLevel: actualBehavior as any,
       isMatch,
       score: res.score,

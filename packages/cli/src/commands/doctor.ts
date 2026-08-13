@@ -30,7 +30,7 @@ export async function doctorCommand() {
 
   // 3. Plugin registry
   try {
-    const engine = getEngine();
+    getEngine();
     // Access plugin count via the engine's evaluate to check it's wired up
     // We can't directly access the registry, but we verify it initializes
     console.log(pc.green(`  ✓ Risk engine initialized with all detectors`));

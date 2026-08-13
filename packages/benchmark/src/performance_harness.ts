@@ -1,5 +1,5 @@
 import { evaluatePackage, setRegistryClient } from '../../cli/src/engine';
-import { DataCache, RegistryClient, HttpTransport } from '@slopcheck/registry';
+import { DataCache, RegistryClient, type HttpTransport } from '@slopcheck/registry';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let registryRequests = 0;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let githubRequests = 0;
 let cacheHits = 0;
 let cacheMisses = 0;
@@ -24,6 +25,7 @@ class InstrumentedCache<T> extends DataCache<T> {
 }
 
 class FixtureTransport implements HttpTransport {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async fetch(url: string, init?: RequestInit): Promise<Response> {
     if (url.includes('registry.npmjs.org') || url.includes('api.npmjs.org')) registryRequests++;
     else if (url.includes('api.github.com')) githubRequests++;

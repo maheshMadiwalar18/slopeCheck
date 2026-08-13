@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { getEngine } from './engine';
 import { formatRiskAssessment } from './formatters/console';
 import type { RiskAssessment } from '@slopcheck/core';

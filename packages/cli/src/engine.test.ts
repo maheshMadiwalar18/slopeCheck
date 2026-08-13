@@ -54,6 +54,7 @@ describe('CLI Engine - evaluatePackage', () => {
       name: 'RegistryError',
       message: 'Package not found',
       status: 404,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any));
 
     const result = await evaluatePackage('non-existent-pkg');
@@ -70,6 +71,7 @@ describe('CLI Engine - evaluatePackage', () => {
     mockFetchNpmMetadata.mockResolvedValue(fail({
       name: 'RegistryError',
       message: 'Request timed out',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any));
 
     const result = await evaluatePackage('some-pkg');
@@ -87,6 +89,7 @@ describe('CLI Engine - evaluatePackage', () => {
       name: 'RegistryError',
       message: 'Rate limited',
       status: 429,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any));
 
     const result = await evaluatePackage('some-pkg');
@@ -106,6 +109,7 @@ describe('CLI Engine - evaluatePackage', () => {
     mockFetchNpmDownloads.mockResolvedValue(fail({
       name: 'RegistryError',
       message: 'Downloads failed',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any));
 
     const result = await evaluatePackage('express');
@@ -133,6 +137,7 @@ describe('CLI Engine - evaluatePackage', () => {
       name: 'RegistryError',
       message: 'Rate limited by GitHub',
       status: 403,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any));
 
     const result = await evaluatePackage('express');

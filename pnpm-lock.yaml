@@ -14,6 +14,9 @@ importers:
       '@types/node':
         specifier: ^26.1.2
         version: 26.1.2
+      eslint:
+        specifier: ^9.39.5
+        version: 9.39.5(supports-color@7.2.0)
       husky:
         specifier: ^9.0.11
         version: 9.1.7
@@ -60,18 +63,6 @@ importers:
 
   packages/cli:
     dependencies:
-      '@slopcheck/core':
-        specifier: workspace:*
-        version: link:../core
-      '@slopcheck/datasets':
-        specifier: workspace:*
-        version: link:../datasets
-      '@slopcheck/heuristics':
-        specifier: workspace:*
-        version: link:../heuristics
-      '@slopcheck/registry':
-        specifier: workspace:*
-        version: link:../registry
       cac:
         specifier: ^6.7.14
         version: 6.7.14
@@ -91,6 +82,18 @@ importers:
       '@slopcheck/config':
         specifier: workspace:*
         version: link:../config
+      '@slopcheck/core':
+        specifier: workspace:*
+        version: link:../core
+      '@slopcheck/datasets':
+        specifier: workspace:*
+        version: link:../datasets
+      '@slopcheck/heuristics':
+        specifier: workspace:*
+        version: link:../heuristics
+      '@slopcheck/registry':
+        specifier: workspace:*
+        version: link:../registry
       '@types/cli-progress':
         specifier: ^3.11.6
         version: 3.11.6
