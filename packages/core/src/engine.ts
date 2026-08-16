@@ -8,7 +8,8 @@ export class RiskEngine {
   async evaluate(
     context: PackageContext,
     status: import('./types').AssessmentStatus = 'COMPLETE',
-    errors: import('./types').AssessmentError[] = []
+    errors: import('./types').AssessmentError[] = [],
+    datasetVersion?: string
   ): Promise<RiskAssessment> {
     const factors: RiskFactor[] = [];
     let totalWeightedScore = 0;
@@ -66,10 +67,12 @@ export class RiskEngine {
       return {
         package: context.name,
         status,
+        datasetVersion,
         assessable: false,
         score: null,
         level: 'UNKNOWN',
         factors,
+        vulnerabilities: context.vulnerabilities || undefined,
         recommendations: [],
         errors,
         scoring: {
@@ -101,10 +104,12 @@ export class RiskEngine {
     return {
       package: context.name,
       status,
+      datasetVersion,
       assessable: finalScore !== null,
       score: finalScore,
       level,
       factors,
+      vulnerabilities: context.vulnerabilities || undefined,
       recommendations,
       errors,
       scoring: {

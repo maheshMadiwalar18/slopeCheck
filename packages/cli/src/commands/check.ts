@@ -1,8 +1,10 @@
 import { evaluatePackage } from '../engine';
+import { loadConfig, PolicyEngine } from '@slopcheck/core';
 import pc from 'picocolors';
 
 export interface CheckOptions {
   json?: boolean;
+  policy?: string;
 }
 
 export function isValidPackageName(name: string): boolean {
@@ -20,10 +22,14 @@ export async function checkCommand(packageName: string, options: CheckOptions = 
     return;
   }
 
+  const config = await loadConfig(options.policy);
+  const engine = new PolicyEngine(config || undefined);
+
   const result = await evaluatePackage(packageName);
+  const decision = engine.decide(result);
 
   if (options.json) {
-    console.log(JSON.stringify(result, null, 2));
+    console.log(JSON.stringify({ assessment: result, policy: decision }, null, 2));
   } else {
     console.log(pc.cyan(`\n🔍 Scanning package: ${pc.bold(packageName)}...`));
     console.log(`\nRisk Level: ${getRiskColor(result.level)(result.level)} (Score: ${result.score !== null ? result.score : 'N/A'})`);
@@ -47,6 +53,24 @@ export async function checkCommand(packageName: string, options: CheckOptions = 
       console.log(pc.green(`  - No significant risk factors identified.`));
     }
 
+    if (result.vulnerabilities && result.vulnerabilities.length > 0) {
+      console.log(pc.red(`\nVulnerabilities (${result.vulnerabilities.length}):`));
+      for (const vuln of result.vulnerabilities) {
+        const severityColor = vuln.severity === 'CRITICAL' ? pc.bgRed : vuln.severity === 'HIGH' ? pc.red : pc.yellow;
+        console.log(`  - ${pc.bold(vuln.id)} [${severityColor(vuln.severity)}]`);
+        console.log(`    Fixed in: ${vuln.fixedVersions?.join(', ') || 'Unknown'}`);
+        console.log(`    Summary: ${vuln.summary}`);
+      }
+    }
+
+    console.log(`\nPolicy Decision: ${getDecisionColor(decision.decision)(decision.decision)}`);
+    if (decision.reasons.length > 0) {
+      console.log(`Reasons:`);
+      for (const reason of decision.reasons) {
+         console.log(`  - [${reason.code}] ${reason.message}`);
+      }
+    }
+
     if (result.recommendations.length > 0) {
       console.log(`\nRecommendations:`);
       for (const rec of result.recommendations) {
@@ -57,8 +81,11 @@ export async function checkCommand(packageName: string, options: CheckOptions = 
   }
 
   if (result.status === 'NOT_FOUND' || result.status === 'UNAVAILABLE' || !result.assessable) {
-    process.exitCode = 2;
-  } else if (result.level === 'HIGH' || result.level === 'CRITICAL') {
+    // Determine exit code based on policy, but if it's operational failure and policy didn't explicitly allow/warn it, exit 2
+    if (decision.decision === 'BLOCK') process.exitCode = 1;
+    else if (decision.decision === 'WARN') process.exitCode = 0;
+    else process.exitCode = 2; // Default operational error code if unhandled by policy
+  } else if (decision.decision === 'BLOCK') {
     process.exitCode = 1;
   } else {
     process.exitCode = 0;
@@ -74,3 +101,13 @@ export function getRiskColor(level: string) {
     default: return pc.white;
   }
 }
+
+export function getDecisionColor(decision: string) {
+  switch (decision) {
+    case 'ALLOW': return pc.green;
+    case 'WARN': return pc.yellow;
+    case 'BLOCK': return pc.red;
+    default: return pc.white;
+  }
+}
+

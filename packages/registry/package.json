@@ -14,11 +14,13 @@
   "devDependencies": {
     "@slopcheck/config": "workspace:*",
     "@types/node": "^26.1.2",
+    "@types/semver": "^7.8.0",
     "tsup": "^8.0.2",
     "typescript": "^5.4.5"
   },
   "dependencies": {
     "@slopcheck/core": "workspace:*",
+    "semver": "^7.8.5",
     "zod": "^4.4.3"
   },
   "engines": {

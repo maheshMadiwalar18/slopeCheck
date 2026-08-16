@@ -15,13 +15,17 @@
   },
   "dependencies": {
     "@slopcheck/core": "workspace:*",
-    "slopcheck-agent": "workspace:*",
     "@slopcheck/registry": "workspace:*",
     "picocolors": "^1.0.1",
+    "slopcheck-agent": "workspace:*",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@slopcheck/agent": "workspace:*",
+    "@slopcheck/claude-code": "workspace:*",
     "@slopcheck/config": "workspace:*",
+    "@slopcheck/cursor": "workspace:*",
+    "@slopcheck/mcp": "workspace:*",
     "tsup": "^8.0.2",
     "typescript": "^5.4.5"
   }

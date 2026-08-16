@@ -1,7 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { evaluatePackage } from '../engine';
-import { getRiskColor, isValidPackageName } from './check';
+import { loadConfig, PolicyEngine } from '@slopcheck/core';
+import { getRiskColor, isValidPackageName, getDecisionColor } from './check';
 import type { CheckOptions } from './check';
 import pc from 'picocolors';
 import pLimit from 'p-limit';
@@ -24,8 +25,6 @@ export async function scanCommand(packageJsonPath: string, options: CheckOptions
     if (!fullPath.endsWith('.json')) {
       throw new Error('Input path must be a .json file');
     }
-    // Basic path traversal prevention (ensure it stays within intended directory if needed, 
-    // though local scans are usually safe. It's best practice not to resolve arbitrary system files.)
     content = await fs.readFile(fullPath, 'utf-8');
   } catch (e) {
     if (options.json) {
@@ -70,7 +69,7 @@ export async function scanCommand(packageJsonPath: string, options: CheckOptions
   }
 
   if (skippedPackages.length > 0 && !options.json) {
-    console.log(pc.yellow(`⚠️ Skipping ${skippedPackages.length} dependencies with unsupported identifiers (e.g., local files, git URLs):`));
+    console.log(pc.yellow(`⚠️ Skipping ${skippedPackages.length} dependencies with unsupported identifiers:`));
     for (const p of skippedPackages) {
       console.log(`  - ${pc.gray(p)}`);
     }
@@ -90,12 +89,16 @@ export async function scanCommand(packageJsonPath: string, options: CheckOptions
     bar.start(validPackages.length, 0, { package: 'Starting...' });
   }
 
+  const config = await loadConfig(options.policy);
+  const engine = new PolicyEngine(config || undefined);
+
   const results = await Promise.all(validPackages.map(p => 
     limit(async () => {
       if (bar) bar.update({ package: p });
       const res = await evaluatePackage(p);
+      const decision = engine.decide(res);
       if (bar) bar.increment();
-      return res;
+      return { assessment: res, policy: decision };
     })
   ));
 
@@ -109,28 +112,25 @@ export async function scanCommand(packageJsonPath: string, options: CheckOptions
     console.log(JSON.stringify(jsonOutput, null, 2));
   } else {
     console.log('\n');
-    const riskyPackages = results.filter(r => (r.score !== null ? r.score : 0) >= 30 || r.status !== 'COMPLETE').sort((a, b) => (b.score || 0) - (a.score || 0));
+    const riskyPackages = results.filter(r => r.policy.decision !== 'ALLOW' || r.assessment.status !== 'COMPLETE');
     
     if (riskyPackages.length === 0) {
-      console.log(pc.green(`✅ All ${validPackages.length} supported dependencies appear safe.`));
+      console.log(pc.green(`✅ All ${validPackages.length} supported dependencies appear safe and are allowed by policy.`));
     } else {
-      console.log(pc.yellow(`⚠️ Found ${riskyPackages.length} potentially risky dependencies:\n`));
+      console.log(pc.yellow(`⚠️ Found ${riskyPackages.length} packages requiring attention:\n`));
 
       for (const r of riskyPackages) {
-        console.log(`${pc.bold(r.package)} - Risk Level: ${getRiskColor(r.level)(r.level)} (Score: ${r.score !== null ? r.score : 'N/A'})`);
-        if (r.status !== 'COMPLETE') {
-          console.log(pc.yellow(`  - Assessment Status: ${r.status}`));
-          if (r.status === 'PARTIAL') {
-            console.log(pc.yellow(`    ⚠️ WARNING: The assessment is based on incomplete evidence.`));
-          }
-          for (const err of r.errors) {
-            console.log(pc.red(`  - [${err.source}] ${err.code}: ${err.message}`));
+        console.log(`${pc.bold(r.assessment.package)} - Risk Level: ${getRiskColor(r.assessment.level)(r.assessment.level)} (Decision: ${getDecisionColor(r.policy.decision)(r.policy.decision)})`);
+        
+        if (r.assessment.status !== 'COMPLETE') {
+          console.log(pc.yellow(`  - Assessment Status: ${r.assessment.status}`));
+          for (const err of r.assessment.errors) {
+            console.log(pc.red(`    [${err.source}] ${err.code}: ${err.message}`));
           }
         }
-        for (const factor of r.factors) {
-          if (factor.score >= 50) {
-            console.log(`  - ${pc.red(factor.name)}: ${factor.description}`);
-          }
+        
+        for (const reason of r.policy.reasons) {
+           console.log(`  - [${reason.code}] ${reason.message}`);
         }
         console.log();
       }
@@ -139,11 +139,14 @@ export async function scanCommand(packageJsonPath: string, options: CheckOptions
 
   let exitCode = 0;
   for (const r of results) {
-    if (r.level === 'HIGH' || r.level === 'CRITICAL') {
+    if (r.policy.decision === 'BLOCK') {
       exitCode = 1;
-      break; // Security risk overrides analysis errors
-    } else if (r.status === 'NOT_FOUND' || r.status === 'UNAVAILABLE' || !r.assessable) {
-      exitCode = Math.max(exitCode, 2);
+      break; 
+    } else if (r.policy.decision === 'WARN') {
+       // WARN doesn't override BLOCK or operational errors
+    } else if (r.assessment.status === 'NOT_FOUND' || r.assessment.status === 'UNAVAILABLE' || !r.assessment.assessable) {
+       // Default operational error if not explicitly blocked
+       if (exitCode !== 1) exitCode = 2;
     }
   }
   process.exitCode = exitCode;

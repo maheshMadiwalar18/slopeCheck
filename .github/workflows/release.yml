@@ -6,6 +6,9 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - name: Setup pnpm
@@ -17,11 +20,22 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
-      - run: pnpm install --no-frozen-lockfile
-      - run: pnpm run build
-      - name: Create Release Pull Request or Publish
-        uses: changesets/action@v1
-        with:
-          publish: pnpm run release
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck
+        run: pnpm run typecheck
+      - name: Lint
+        run: pnpm run lint
+      - name: Test
+        run: pnpm run test
+      - name: Build
+        run: pnpm run build
+      - name: Benchmark
+        run: pnpm run benchmark
+      - name: Verify package
+        run: pnpm -F @slopcheck/cli run build && cd packages/cli && npm pack --dry-run
+      - name: Publish to npm
+        if: github.event_name == 'workflow_dispatch'
+        run: pnpm -F @slopcheck/cli publish --access public --no-git-checks
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

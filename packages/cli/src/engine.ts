@@ -1,5 +1,6 @@
 import type { PackageContext, RiskAssessment, AssessmentStatus, AssessmentError } from '@slopcheck/core';
 import { RiskEngine, PluginRegistry, isFailure } from '@slopcheck/core';
+import { getDatasetManifest } from '@slopcheck/datasets';
 import { RegistryClient } from '@slopcheck/registry';
 import { 
   AgeDetector, 
@@ -7,7 +8,8 @@ import {
   MetadataDetector, 
   PopularityDetector, 
   RepoDetector, 
-  SimilarityDetector 
+  SimilarityDetector,
+  VulnerabilityDetector
 } from '@slopcheck/heuristics';
 
 let sharedEngine: RiskEngine | null = null;
@@ -34,6 +36,7 @@ export function getEngine(): RiskEngine {
   registry.register(new MetadataDetector());
   registry.register(new HallucinationDetector());
   registry.register(new SimilarityDetector());
+  registry.register(new VulnerabilityDetector());
 
   sharedEngine = new RiskEngine(registry);
   return sharedEngine;
@@ -92,8 +95,33 @@ export async function evaluatePackage(packageName: string, version?: string): Pr
     }
   }
 
+  // Fetch Vulnerabilities even if NPM fails, although OSV might also fail if package doesn't exist.
+  // Actually, if NPM fails with 404, we don't strictly need to fetch OSV, but doing so is safe.
+  if (!isNotFound) {
+    const osvRes = await client.fetchOsvVulnerabilities(packageName, version);
+    if (isFailure(osvRes)) {
+      status = 'UNAVAILABLE';
+      context.vulnerabilities = null;
+      errors.push({
+        source: 'osv',
+        code: 'VULNERABILITIES_UNAVAILABLE',
+        message: osvRes.error.message,
+      });
+    } else {
+      context.vulnerabilities = osvRes.value;
+    }
+  }
+
   const engine = getEngine();
-  const res = await engine.evaluate(context, status, errors);
+  let datasetVersion: string | undefined;
+  try {
+    const manifest = await getDatasetManifest();
+    datasetVersion = manifest.datasetVersion;
+  } catch {
+    // Ignore, let it be undefined if datasets fail to load
+  }
+
+  const res = await engine.evaluate(context, status, errors, datasetVersion);
   
   if (isNotFound && res.level !== 'CRITICAL' && res.level !== 'HIGH') {
     return {

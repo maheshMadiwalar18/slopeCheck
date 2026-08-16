@@ -1,0 +1,13 @@
+name: Slopcheck Security Scan
+on: [pull_request]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan Dependencies
+        uses: voodoowrez/slopcheck@v1
+        with:
+          path: package.json
+          fail-on: high

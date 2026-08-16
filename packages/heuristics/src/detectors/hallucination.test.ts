@@ -15,6 +15,8 @@ vi.mock('@slopcheck/datasets', () => {
   map.set('mixed-case-pkg', { package: 'MiXeD-CaSe-PkG', source: 'test case', date_added: '2024-05-10' });
   return {
     getHallucinationMap: vi.fn().mockResolvedValue(map),
+    getProtectedPackages: vi.fn().mockResolvedValue(new Set(['react', 'typescript'])),
+    normalizePackageName: (name: string) => name.trim().toLowerCase(),
   };
 });
 
@@ -32,6 +34,20 @@ describe('HallucinationDetector', () => {
       expect(result.value[0]!.weight).toBe(3.0);
       expect(result.value[0]!.severityClass).toBe('hard');
       expect(result.value[0]!.description).toContain('EXACT_HALLUCINATION_MATCH');
+    }
+  });
+
+  it('should explicitly emit a SAFE factor for a protected package', async () => {
+    const ctx: PackageContext = { name: 'react' };
+    const result = await detector.analyze(ctx);
+
+    expect(isSuccess(result)).toBe(true);
+    if (isSuccess(result)) {
+      expect(result.value.length).toBe(1);
+      expect(result.value[0]!.score).toBe(0);
+      expect(result.value[0]!.weight).toBe(3.0);
+      expect(result.value[0]!.severityClass).toBe('hard');
+      expect(result.value[0]!.description).toContain('PROTECTED_PACKAGE');
     }
   });
 
@@ -68,9 +84,9 @@ describe('HallucinationDetector', () => {
     expect(isSuccess(result)).toBe(true);
     if (isSuccess(result)) {
       expect(result.value.length).toBe(1);
-      expect(result.value[0]!.score).toBe(80);
-      expect(result.value[0]!.severityClass).toBe('strong');
-      expect(result.value[0]!.description).toContain('HALLUCINATED_BASENAME_VARIANT');
+      expect(result.value[0]!.score).toBe(100);
+      expect(result.value[0]!.severityClass).toBe('hard');
+      expect(result.value[0]!.description).toContain('EXACT_HALLUCINATION_MATCH');
     }
   });
 
@@ -97,9 +113,9 @@ describe('HallucinationDetector', () => {
     expect(isSuccess(result)).toBe(true);
     if (isSuccess(result)) {
       expect(result.value.length).toBe(1);
-      expect(result.value[0]!.score).toBe(80);
-      expect(result.value[0]!.severityClass).toBe('strong');
-      expect(result.value[0]!.description).toContain('HALLUCINATED_BASENAME_VARIANT');
+      expect(result.value[0]!.score).toBe(100);
+      expect(result.value[0]!.severityClass).toBe('hard');
+      expect(result.value[0]!.description).toContain('EXACT_HALLUCINATION_MATCH');
     }
   });
 

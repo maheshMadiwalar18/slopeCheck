@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "datasetVersion": "2026.08.1",
+  "generatedAt": "2026-08-13T17:40:35.215Z",
+  "datasets": {
+    "official": {
+      "version": "1.0.0",
+      "sha256": "52c56422189d130f592664d421f95c55e0721dc03976e93ae1566106250c3dde",
+      "records": 9
+    },
+    "community": {
+      "version": "1.0.0",
+      "sha256": "eb012e65c423e7f88bbaa664b5110aed64a29562ae2aecbfd39e1e76a001dd42",
+      "records": 3
+    },
+    "popular-packages": {
+      "version": "1.0.0",
+      "sha256": "d404d0bfe9e0bc87cafa959c0bd28c77599238275f25d91c656ce4b4f94ff3b6",
+      "records": 50
+    },
+    "protected": {
+      "version": "1.0.0",
+      "sha256": "4b8950c82ca4c3330e2c364b81b028e7f8da718dcad7398a48a57cf7daaee0fa",
+      "records": 31
+    }
+  }
+}

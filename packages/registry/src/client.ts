@@ -8,6 +8,8 @@ import type { Result } from '@slopcheck/core';
 import { ok, fail } from '@slopcheck/core';
 import type { HttpTransport } from './transport';
 import { FetchTransport } from './transport';
+import { OsvResponseSchema, normalizeOsv, isVersionAffected } from './osv';
+import type { VulnerabilityFinding } from '@slopcheck/core';
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 const MAX_RETRIES = 2;
@@ -21,6 +23,7 @@ export class RegistryClient {
     public metadataCache = new DataCache<NpmPackageMetadata>(),
     public downloadsCache = new DataCache<NpmDownloadStats>(),
     public githubCache = new DataCache<GithubMetadata>(),
+    public vulnerabilityCache = new DataCache<readonly VulnerabilityFinding[]>(),
   ) {}
 
   private async fetchWithRetry(url: string, init?: RequestInit): Promise<Response> {
@@ -139,6 +142,44 @@ export class RegistryClient {
       const parsed = GithubMetadataSchema.parse(data);
       this.githubCache.set(cacheKey, parsed);
       return ok(parsed);
+    } catch (e) {
+      if (e instanceof z.ZodError) return fail(new RegistryError(`Schema validation failed: ${e.message}`));
+      if (e instanceof DOMException && e.name === 'TimeoutError') return fail(new RegistryError('Request timed out'));
+      return fail(new RegistryError(e instanceof Error ? e.message : 'Unknown network error'));
+    }
+  }
+
+  async fetchOsvVulnerabilities(packageName: string, version?: string): Promise<Result<readonly VulnerabilityFinding[], RegistryError>> {
+    const cacheKey = version ? `${packageName}@${version}` : packageName;
+    const cached = this.vulnerabilityCache.get(cacheKey);
+    if (cached) return ok(cached);
+
+    try {
+      // OSV API POST request
+      const response = await this.fetchWithRetry(`https://api.osv.dev/v1/query`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ package: { name: packageName, ecosystem: 'npm' } })
+      });
+      
+      if (!response.ok) {
+        return fail(new RegistryError(`OSV API returned ${response.status}`, response.status));
+      }
+      
+      const data = await response.json();
+      const parsed = OsvResponseSchema.parse(data);
+      
+      let findings: VulnerabilityFinding[] = [];
+      if (parsed.vulns && parsed.vulns.length > 0) {
+        findings = parsed.vulns.map(v => normalizeOsv(v, packageName));
+      }
+
+      if (version) {
+        findings = findings.filter(f => isVersionAffected(version, f));
+      }
+
+      this.vulnerabilityCache.set(cacheKey, findings);
+      return ok(findings);
     } catch (e) {
       if (e instanceof z.ZodError) return fail(new RegistryError(`Schema validation failed: ${e.message}`));
       if (e instanceof DOMException && e.name === 'TimeoutError') return fail(new RegistryError('Request timed out'));

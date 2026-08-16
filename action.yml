@@ -1,0 +1,34 @@
+name: 'Slopcheck Agent'
+description: 'AI-native supply-chain security for detecting hallucinated, typosquatted, and suspicious packages'
+author: 'Slopcheck Contributors'
+inputs:
+  path:
+    description: 'Path to package.json to scan (legacy)'
+    required: false
+    default: 'package.json'
+  lockfile:
+    description: 'Path to lockfile (e.g., package-lock.json). Highly recommended for better dependency resolution.'
+    required: false
+  fail-on:
+    description: 'Minimum severity level to fail the CI job (safe, suspicious, high, critical). Ignored if policy is provided.'
+    required: false
+    default: 'high'
+  policy:
+    description: 'Path to policy configuration file (e.g. .github/slopcheck-policy.yml)'
+    required: false
+  version:
+    description: 'Version of slopcheck-agent CLI to use'
+    required: false
+    default: '0.1.0'
+outputs:
+  status:
+    description: 'The overall scan status from the agent'
+  packages-scanned:
+    description: 'Total number of evaluated packages'
+  high-risk-count:
+    description: 'Number of high risk packages found'
+  critical-count:
+    description: 'Number of critical risk packages found'
+runs:
+  using: 'node20'
+  main: 'packages/action/dist/index.js'

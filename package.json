@@ -1,6 +1,20 @@
 {
   "name": "slopcheck-agent-monorepo",
   "private": true,
+  "description": "Slopcheck: Security analysis and risk scoring for npm packages to prevent supply-chain attacks.",
+  "license": "MIT",
+  "author": "Slopcheck Contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voodoowrez/slopcheck-agent.git"
+  },
+  "keywords": [
+    "security",
+    "npm",
+    "supply-chain",
+    "hallucination",
+    "typosquatting"
+  ],
   "scripts": {
     "build": "pnpm -r run build",
     "test": "pnpm -r run test",

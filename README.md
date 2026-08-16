@@ -25,7 +25,17 @@ Supply-chain compromise
 
 ## The Solution
 
-Slopcheck Agent is a proactive security tool that analyzes package risk **before** installation or execution. By evaluating multiple heuristics, Slopcheck identifies potentially malicious packages.
+Slopcheck Agent is a proactive security tool that analyzes package risk **before** installation or execution.
+
+## Security Layers
+
+Slopcheck applies multiple layers of AI and heuristic defense:
+
+1. **Hallucination Detection**: Detects unavailable packages dynamically referenced by AI systems.
+2. **Metadata Intelligence**: Flags new, unpopular, or anomaly-laden packages using heuristic thresholds.
+3. **Impersonation/Similarity**: Prevents typosquatting by comparing package names against high-value targets.
+4. **Supply Chain Data**: Matches packages against known malicious version datasets.
+5. **Enterprise Policies**: Explicit, customizable risk thresholds and detector behaviors (see [Policies](docs/policies.md)).
 
 **Current Detection Capabilities:**
 * **Package Age**: Flags newly published packages with no established history.
@@ -150,6 +160,32 @@ The CLI uses strict exit codes:
 
 ---
 
+## CI/CD Integration
+
+Slopcheck provides an official GitHub Action to seamlessly integrate supply-chain security into your CI pipelines. It will block pull requests that introduce high-risk dependencies.
+
+```yaml
+steps:
+  - uses: actions/checkout@v4
+  - name: Slopcheck Agent Scan
+    uses: maheshMadiwalar18/slopeCheck/packages/action@v0.1.0
+    with:
+      lockfile: 'package-lock.json'
+      policy: '.github/slopcheck-policy.yml'
+```
+
+## Lockfile Scanning
+
+You can scan the entire resolved dependency graph inside your lockfiles to catch transitive risks:
+```bash
+slopcheck-agent scan-lockfile package-lock.json
+```
+For more information on supported lockfiles and architecture, see [Lockfile Scanning](docs/lockfile-scanning.md).
+
+For more details on configuration, inputs, and outputs, see the [GitHub Action Documentation](docs/github-action.md).
+
+---
+
 ## How It Works
 
 ```mermaid
@@ -228,7 +264,25 @@ This decoupled architecture allows the community to easily write and integrate n
 | Package metadata heuristics    |               ✓ |                       Varies |
 | AI-agent focused workflow      |         Planned |              Usually limited |
 | Explainable findings           |               ✓ |                       Varies |
-| CVE Vulnerability Scanning     |     Out of scope|                            ✓ |
+| CVE Vulnerability Scanning     |               ✓ |                            ✓ |
+
+---
+
+## Vulnerability Intelligence
+
+Slopcheck Agent integrates Software Composition Analysis (SCA) Intelligence by fetching vulnerability information directly from [OSV.dev](https://osv.dev). This enriches package risk assessments with known vulnerability signals (CVEs, GHSAs), enhancing the supply-chain risk profile without sending your dependency data to closed-source databases. 
+
+Vulnerabilities influence the final risk score explicitly through policy signals (e.g. `CRITICAL` or `HIGH` vulnerabilities emit strong risk factors). 
+
+To specifically check vulnerabilities for a package:
+```bash
+slopcheck-agent vulnerabilities lodash
+```
+To generate an SBOM with vulnerability extensions:
+```bash
+slopcheck-agent sbom package-lock.json --out sbom.json
+```
+For more information, see [Vulnerability Intelligence](docs/vulnerability-intelligence.md).
 
 ---
 
@@ -300,7 +354,7 @@ pnpm lint
 
 To run the CLI locally during development:
 ```bash
-node packages/cli/dist/index.js check express
+node packages/cli/dist/index.mjs check express
 ```
 
 ---
@@ -332,3 +386,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
 ## Security
 
 If you discover a security vulnerability in Slopcheck Agent, please do not disclose it publicly. Refer to our [SECURITY.md](SECURITY.md) for responsible disclosure instructions.
+
+## AI Agent Integration
+Slopcheck Agent provides a generic interception layer that allows AI tools (like Claude Code, Cursor, or custom agents) to proactively inspect packages before executing npm install or running arbitrary code.
+
+See [Agent Integration Docs](docs/agent-integration.md) for more details.
+
+See [Claude Code Integration](docs/integrations/claude-code.md) for how to use Slopcheck as a PreToolUse hook.

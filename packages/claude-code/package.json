@@ -1,0 +1,25 @@
+{
+  "name": "@slopcheck/claude-code",
+  "version": "0.1.0",
+  "description": "Claude Code integration for Slopcheck Agent",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "slopcheck-claude-guard": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "lint": "eslint src/",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@slopcheck/agent": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.2",
+    "vitest": "^1.6.0"
+  }
+}

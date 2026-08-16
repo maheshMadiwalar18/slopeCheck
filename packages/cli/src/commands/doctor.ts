@@ -1,6 +1,6 @@
 import pc from 'picocolors';
 import { getEngine } from '../engine';
-import { getOfficialHallucinations, getCommunityHallucinations, getPopularPackages } from '@slopcheck/datasets';
+import { getDatasetManifest, getOfficialHallucinations, getCommunityHallucinations, getPopularPackages, getProtectedPackages } from '@slopcheck/datasets';
 
 export async function doctorCommand() {
   console.log(pc.bold('\n🩺 Slopcheck Doctor\n'));
@@ -19,10 +19,14 @@ export async function doctorCommand() {
 
   // 2. Datasets
   try {
+    const manifest = await getDatasetManifest();
     const official = await getOfficialHallucinations();
     const community = await getCommunityHallucinations();
     const popular = await getPopularPackages();
-    console.log(pc.green(`  ✓ Datasets loaded (${official.length} official, ${community.length} community, ${popular.length} popular packages)`));
+    const protectedPkgs = await getProtectedPackages();
+    console.log(pc.green(`  ✓ Datasets loaded v${manifest.datasetVersion} (schema v${manifest.schemaVersion})`));
+    console.log(pc.green(`      - ${official.length} official, ${community.length} community, ${popular.length} popular, ${protectedPkgs.size} protected`));
+    console.log(pc.green(`      - SHA-256 integrity checks passed`));
   } catch (e) {
     console.log(pc.red(`  ✗ Dataset loading failed: ${e instanceof Error ? e.message : 'Unknown error'}`));
     allOk = false;

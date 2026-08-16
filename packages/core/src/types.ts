@@ -66,6 +66,16 @@ export interface GithubInfo {
   readonly disabled?: boolean | undefined;
 }
 
+export interface VulnerabilityFinding {
+  readonly id: string;
+  readonly source: string;
+  readonly severity: string;
+  readonly package: string;
+  readonly affectedVersions: readonly string[];
+  readonly fixedVersions?: readonly string[] | undefined;
+  readonly summary: string;
+}
+
 /**
  * All available context for evaluating a package's risk.
  * Populated incrementally by the CLI engine before passing to detectors.
@@ -76,6 +86,7 @@ export interface PackageContext {
   npm?: NpmPackageMetadata | null | undefined;
   downloads?: DownloadStats | null | undefined;
   github?: GithubInfo | null | undefined;
+  vulnerabilities?: readonly VulnerabilityFinding[] | null | undefined;
 }
 
 export type AssessmentStatus = 'COMPLETE' | 'PARTIAL' | 'NOT_FOUND' | 'UNAVAILABLE';
@@ -99,10 +110,12 @@ export interface RiskContribution {
 export interface RiskAssessment {
   readonly package: string;
   readonly status: AssessmentStatus;
+  readonly datasetVersion?: string | undefined;
   readonly assessable: boolean;
   readonly score: number | null;
   readonly level: RiskLevel;
   readonly factors: readonly RiskFactor[];
+  readonly vulnerabilities?: readonly VulnerabilityFinding[] | undefined;
   readonly recommendations: readonly string[];
   readonly errors: readonly AssessmentError[];
   readonly scoring?: {

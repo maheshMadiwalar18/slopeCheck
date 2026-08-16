@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - Unreleased
+
+### Added
+- Official GitHub Action (`slopcheck-agent/action`) for scanning dependencies in CI/CD.
+- Action supports configurable `fail-on` thresholds and native GitHub Actions Job Summaries.
+
+
 ## [0.1.0] - 2026-08-13
 
 ### Added
@@ -11,14 +18,18 @@ All notable changes to this project will be documented in this file.
 - Explanation engine via `explain` command for interpreting risk scores.
 
 ### Security
-- Hallucination detection against official and community datasets.
-- Similarity/impersonation detection (typosquatting).
-- Explicit assessment states (SAFE, SUSPICIOUS, HIGH, CRITICAL).
+- Explicit assessment states (COMPLETE, PARTIAL, NOT_FOUND, UNAVAILABLE).
 - Detector failure handling indicating PARTIAL or UNAVAILABLE states.
-- Hard security signals (e.g., hallucination/impersonation) that cannot be diluted by weak heuristic signals.
+- Hard security signals that cannot be diluted by weak heuristic signals.
 - Missing repository metadata heuristic.
 - Package age and download activity heuristic.
 - Registry retries and timeouts to prevent hanging on network failures.
+- Security regression tests.
+
+### Detection
+- Hallucinated package detection against official and community datasets.
+- Typosquatting and similarity detection.
+- Scoped-package impersonation detection.
 
 ### CLI
 - Native `slopcheck-agent` command-line application.

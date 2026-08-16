@@ -1,0 +1,31 @@
+{
+  "name": "@slopcheck/cursor",
+  "version": "0.1.0",
+  "description": "Cursor AI integration for Slopcheck Agent",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "slopcheck-cursor": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@slopcheck/agent": "workspace:*"
+  },
+  "devDependencies": {
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8",
+    "@types/node": "^22.10.2",
+    "eslint": "^9.17.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

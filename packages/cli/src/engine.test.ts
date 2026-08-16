@@ -6,16 +6,19 @@ import { ok, fail } from '@slopcheck/core';
 const mockFetchNpmMetadata = vi.fn();
 const mockFetchNpmDownloads = vi.fn();
 const mockFetchGithubMetadata = vi.fn();
+const mockFetchOsvVulnerabilities = vi.fn();
 
 const mockClient = {
   fetchNpmMetadata: mockFetchNpmMetadata,
   fetchNpmDownloads: mockFetchNpmDownloads,
   fetchGithubMetadata: mockFetchGithubMetadata,
+  fetchOsvVulnerabilities: mockFetchOsvVulnerabilities,
 } as unknown as RegistryClient;
 
 describe('CLI Engine - evaluatePackage', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mockFetchOsvVulnerabilities.mockResolvedValue(ok([]));
     setRegistryClient(mockClient);
   });
 

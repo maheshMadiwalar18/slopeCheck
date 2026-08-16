@@ -6,7 +6,8 @@ on:
   pull_request:
 
 jobs:
-  build:
+  required-checks:
+    name: Required Checks (Build, Test, Lint)
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -23,7 +24,29 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
+      - name: Check Formatting
+        run: npx prettier --check "**/*.{ts,tsx,md,json,yaml}"
       - run: pnpm run typecheck
       - run: pnpm run lint
       - run: pnpm run build
       - run: pnpm run test
+
+  optional-benchmark:
+    name: Optional Benchmark Check
+    runs-on: ubuntu-latest
+    needs: required-checks
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - run: pnpm run benchmark

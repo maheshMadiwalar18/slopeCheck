@@ -1,0 +1,29 @@
+{
+  "name": "@slopcheck/agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent-Native Interception Layer for Slopcheck",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@slopcheck/core": "workspace:*",
+    "@slopcheck/heuristics": "workspace:*",
+    "@slopcheck/registry": "workspace:*",
+    "@slopcheck/datasets": "workspace:*"
+  },
+  "devDependencies": {
+    "@slopcheck/config": "workspace:*",
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
